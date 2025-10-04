@@ -79,6 +79,15 @@ export default function App() {
   const [qualityHints, setQualityHints] = useState<QualityHint[]>([]);
   const [baseQualityHints, setBaseQualityHints] = useState<QualityHint[]>([]);
   const [shapeOverlay, setShapeOverlay] = useState<string | null>("circle");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem("theme");
+      if (stored === "light" || stored === "dark") {
+        return stored;
+      }
+    }
+    return "dark";
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
 
@@ -92,6 +101,18 @@ export default function App() {
   const originalDimensions = imgEl
     ? `${imgEl.naturalWidth} × ${imgEl.naturalHeight}`
     : null;
+  const themeButtonLabel = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  }, []);
 
   const evaluateQuality = useCallback((image: HTMLImageElement, source?: File) => {
     const hints: QualityHint[] = [];
@@ -355,62 +376,79 @@ export default function App() {
 
   return (
     <div
-      className="relative flex min-h-screen flex-col overflow-hidden bg-slate-950 text-slate-50"
+      className="relative flex min-h-screen flex-col overflow-hidden bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-50"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-teal-500/40 via-transparent to-transparent blur-3xl" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-purple-600/30 via-transparent to-transparent blur-3xl" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-200/40 via-transparent to-transparent blur-3xl dark:from-teal-500/40" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-purple-300/30 via-transparent to-transparent blur-3xl dark:from-purple-600/30" />
       <div className="relative z-10 flex h-screen flex-col px-6 py-8 lg:px-12">
         {isDragging && (
-          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur">
-            <div className="rounded-3xl border border-cyan-400/60 bg-slate-900/80 px-10 py-8 text-center text-slate-100 shadow-[0_25px_80px_-40px_rgba(34,211,238,0.6)]">
+          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-slate-100/80 backdrop-blur dark:bg-slate-950/70">
+            <div className="rounded-3xl border border-cyan-400/60 bg-white px-10 py-8 text-center text-slate-900 shadow-[0_25px_80px_-40px_rgba(103,232,249,0.4)] dark:bg-slate-900/80 dark:text-slate-100 dark:shadow-[0_25px_80px_-40px_rgba(34,211,238,0.6)]">
               <p className="text-lg font-semibold">Drop your SVG or PNG</p>
-              <p className="mt-2 text-sm text-cyan-200/80">We&apos;ll process it instantly in your browser.</p>
+              <p className="mt-2 text-sm text-cyan-600 dark:text-cyan-200/80">We&apos;ll process it instantly in your browser.</p>
             </div>
           </div>
         )}
         <header className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-cyan-200/80 shadow-lg shadow-cyan-500/10 ring-1 ring-white/10 backdrop-blur">
+            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-cyan-700 shadow-lg shadow-cyan-200/40 ring-1 ring-cyan-200 backdrop-blur dark:bg-white/5 dark:text-cyan-200/80 dark:shadow-cyan-500/10 dark:ring-white/10">
               IconSmith Studio
             </span>
-            <h1 className="text-2xl font-semibold text-white lg:text-3xl">
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white lg:text-3xl">
               Browser-native icon foundry.
             </h1>
-            <p className="max-w-xl text-xs text-slate-300 lg:text-sm">
+            <p className="max-w-xl text-xs text-slate-600 dark:text-slate-300 lg:text-sm">
               Upload once, fine-tune padding, and export polished icon bundles for every platform without leaving the tab.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 self-start rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-slate-200 shadow-lg shadow-cyan-900/20 backdrop-blur lg:max-w-sm">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-200/80">
+          <div className="flex flex-col items-stretch gap-2 self-start lg:items-end">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-pressed={theme === "dark"}
+              aria-label={themeButtonLabel}
+              title={themeButtonLabel}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-[11px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 dark:border-white/10 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/20"
+            >
+              <span role="img" aria-hidden="true">
+                {theme === "dark" ? "🌞" : "🌙"}
+              </span>
+              <span className="tracking-[0.25em] uppercase">
+                {theme === "dark" ? "Light" : "Dark"} mode
+              </span>
+            </button>
+            <div className="grid grid-cols-2 gap-2 self-start rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 shadow-lg shadow-slate-200/60 backdrop-blur lg:max-w-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:shadow-cyan-900/20">
+              <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-600 dark:text-cyan-200/80">
                 Targets
               </p>
-              <p className="mt-1 text-xl font-semibold text-white">
+              <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">
                 {selectedCount}/{totalPresets}
               </p>
             </div>
-      <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-purple-200/80">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-purple-600 dark:text-purple-200/80">
                 Padding
               </p>
-              <p className="mt-1 text-xl font-semibold text-white">
+              <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">
                 {padPercentage}%
               </p>
+            </div>
             </div>
           </div>
         </header>
 
         <div className="mt-6 flex flex-1 gap-6 overflow-hidden">
           <div className="flex flex-[1.7] flex-col gap-4 overflow-hidden">
-            <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-teal-900/20 backdrop-blur">
+            <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-2xl shadow-teal-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-teal-900/20">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-0.5">
-                  <h2 className="text-base font-semibold text-white">Source Artwork</h2>
-                  <p className="text-xs text-slate-300">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">Source Artwork</h2>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
                     SVG or transparent PNG recommended. High resolution gives crisp results.
                   </p>
                 </div>
@@ -430,10 +468,10 @@ export default function App() {
               {imgEl ? (
                 <div className="mt-4 flex flex-1 min-h-0 gap-4">
                   <div className="flex w-[220px] flex-col gap-3">
-                    <div className="flex flex-col rounded-2xl border border-white/10 bg-slate-950/60 p-3 shadow-inner shadow-cyan-500/10">
-                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.4em] text-cyan-200/70">
+                    <div className="flex flex-col rounded-2xl border border-slate-200 bg-slate-100 p-3 shadow-inner shadow-cyan-200/30 dark:border-white/10 dark:bg-slate-950/60 dark:shadow-cyan-500/10">
+                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.4em] text-cyan-600 dark:text-cyan-200/70">
                         <span>Preview</span>
-                        <span className="text-[9px] font-normal tracking-[0.2em] text-slate-300">
+                        <span className="text-[9px] font-normal tracking-[0.2em] text-slate-500 dark:text-slate-300">
                           Alpha intact
                         </span>
                       </div>
@@ -442,60 +480,62 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-[10px] text-slate-200 sm:text-xs">
+                    <div className="grid grid-cols-3 gap-2 text-[10px] text-slate-600 dark:text-slate-200 sm:text-xs">
                       {overlayShapes.map((shape) => (
                         <button
                           key={shape.id}
                           type="button"
                           onClick={() => setShapeOverlay(shape.id)}
-                          className={`flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-2 text-center transition hover:border-cyan-400/60 ${
+                          className={`flex flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-2 text-center transition hover:border-cyan-400/60 dark:border-white/10 dark:bg-white/5 ${
                             shapeOverlay === shape.id
-                              ? "shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/60"
+                              ? "shadow-lg shadow-cyan-200/60 ring-1 ring-cyan-300/60 dark:shadow-cyan-500/20 dark:ring-cyan-400/60"
                               : ""
                           }`}
                         >
-                          <span className="text-[11px] font-medium text-white">{shape.label}</span>
-                          <span className="text-[9px] text-slate-300">{shape.description}</span>
+                          <span className="text-[11px] font-medium text-slate-900 dark:text-white">{shape.label}</span>
+                          <span className="text-[9px] text-slate-500 dark:text-slate-300">{shape.description}</span>
                         </button>
                       ))}
                       <button
                         type="button"
                         onClick={() => setShapeOverlay(null)}
-                        className={`flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-2 text-center transition hover:border-cyan-400/60 ${
-                          shapeOverlay === null ? "shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/60" : ""
+                        className={`flex flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-2 text-center transition hover:border-cyan-400/60 dark:border-white/10 dark:bg-white/5 ${
+                          shapeOverlay === null
+                            ? "shadow-lg shadow-cyan-200/60 ring-1 ring-cyan-300/60 dark:shadow-cyan-500/20 dark:ring-cyan-400/60"
+                            : ""
                         }`}
                       >
-                        <span className="text-[11px] font-medium text-white">None</span>
-                        <span className="text-[9px] text-slate-300">Original canvas</span>
+                        <span className="text-[11px] font-medium text-slate-900 dark:text-white">None</span>
+                        <span className="text-[9px] text-slate-500 dark:text-slate-300">Original canvas</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid flex-1 grid-cols-2 gap-3 text-[11px] text-slate-200 sm:text-xs">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-200/80">
+                  <div className="grid flex-1 grid-cols-2 gap-3 text-[11px] text-slate-600 dark:text-slate-200 sm:text-xs">
+                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-white/10 dark:bg-white/5">
+                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-600 dark:text-purple-200/80">
                         Original size
                       </p>
-                      <p className="mt-1 text-base font-medium text-white">
+                      <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">
                         {originalDimensions ?? "—"}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-200/80">
+                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-white/10 dark:bg-white/5">
+                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-600 dark:text-purple-200/80">
                         Output padding
                       </p>
-                      <p className="mt-1 text-base font-medium text-white">
+                      <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">
                         {padPercentage}%
                       </p>
-                      <p className="mt-0.5 text-[10px] text-slate-300">
+                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-300">
                         Maskable icons add ~12% automatically.
                       </p>
                     </div>
-                    <div className="col-span-2 rounded-2xl border border-white/10 bg-white/5 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-200/80">
+                    <div className="col-span-2 rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-white/10 dark:bg-white/5">
+                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-600 dark:text-purple-200/80">
                         Output bundle includes
                       </p>
-                      <ul className="mt-2 grid gap-1 text-[11px] text-slate-300 sm:text-xs">
+                      <ul className="mt-2 grid gap-1 text-[11px] text-slate-500 dark:text-slate-300 sm:text-xs">
                         <li>• Web manifest + favicon.ico</li>
                         <li>• Android adaptive & monochrome</li>
                         <li>• iOS Contents.json ready for Xcode</li>
@@ -506,12 +546,12 @@ export default function App() {
                         {qualityHints.map((hint) => (
                           <div
                             key={hint.id}
-                            className={`rounded-2xl border px-3 py-3 text-left text-[11px] text-slate-100 shadow-lg ${severityStyles[hint.severity]}`}
+                            className={`rounded-2xl border px-3 py-3 text-left text-[11px] text-slate-900 shadow-lg dark:text-slate-100 ${severityStyles[hint.severity]}`}
                           >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-white/80">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-700 dark:text-white/80">
                               {hint.title}
                             </p>
-                            <p className="mt-2 text-xs text-white/80">{hint.detail}</p>
+                            <p className="mt-2 text-xs text-slate-700 dark:text-white/80">{hint.detail}</p>
                           </div>
                         ))}
                       </div>
@@ -519,25 +559,25 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-6 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/15 bg-slate-900/60 text-center text-sm text-slate-300">
+                <div className="mt-6 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300/60 bg-white/70 text-center text-sm text-slate-600 dark:border-white/15 dark:bg-slate-900/60 dark:text-slate-300">
                   Click the upload chip or drag &amp; drop an SVG/PNG anywhere on this canvas to begin.
                 </div>
               )}
             </section>
 
-            <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-purple-900/20 backdrop-blur">
+            <section className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-2xl shadow-purple-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-purple-900/20">
               <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
                 <div className="space-y-0.5">
-                  <h2 className="text-base font-semibold text-white">Global Padding</h2>
-                  <p className="text-xs text-slate-300">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">Global Padding</h2>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
                     Fine-tune negative space for all rendered sizes simultaneously.
                   </p>
                 </div>
-                <div className="rounded-full border border-white/10 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-cyan-200/70">
+                <div className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-cyan-600 dark:text-cyan-200/70">
                     Current
                   </span>
-                  <span className="ml-2 text-base font-semibold text-white">{padPercentage}%</span>
+                  <span className="ml-2 text-base font-semibold text-slate-900 dark:text-white">{padPercentage}%</span>
                 </div>
               </div>
               <div className="mt-3">
@@ -547,9 +587,9 @@ export default function App() {
                   max={20}
                   value={padPct * 100}
                   onChange={(e) => setPadPct(parseInt(e.target.value, 10) / 100)}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-900/60 accent-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:bg-slate-900/60 dark:accent-cyan-400 dark:focus:ring-cyan-400/70"
                 />
-                <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.4em] text-slate-400">
+                <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.4em] text-slate-400 dark:text-slate-400">
                   <span>0%</span>
                   <span>5%</span>
                   <span>10%</span>
@@ -561,12 +601,12 @@ export default function App() {
       </div>
 
           <aside className="flex flex-[1] flex-col gap-4 overflow-hidden">
-            <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-blue-900/20 backdrop-blur">
+            <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-2xl shadow-blue-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-blue-900/20">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-white">Preset Targets</h2>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">Preset Targets</h2>
                 <button
                   type="button"
-                  className="text-[11px] uppercase tracking-[0.35em] text-cyan-200/80 transition hover:text-cyan-200"
+                  className="text-[11px] uppercase tracking-[0.35em] text-cyan-600 transition hover:text-cyan-500 dark:text-cyan-200/80 dark:hover:text-cyan-200"
                   onClick={() =>
                     setSelected((prev) => {
                       const anyUnchecked = presetEntries.some(([key]) => !prev[key]);
@@ -584,23 +624,23 @@ export default function App() {
                   Toggle All
         </button>
               </div>
-              <ul className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm">
+              <ul className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs text-slate-600 dark:text-slate-200 sm:text-sm">
                 {presetEntries.map(([key, value]) => {
                   const checked = selected[key];
                   return (
                     <li
                       key={key}
-                      className={`flex items-center justify-between gap-3 rounded-2xl border border-white/10 px-4 py-3 transition ${
+                      className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3 transition dark:border-white/10 ${
                         checked
-                          ? "bg-gradient-to-r from-cyan-500/25 via-blue-500/25 to-purple-500/25 shadow-lg shadow-cyan-900/20"
-                          : "bg-slate-900/60"
+                          ? "bg-gradient-to-r from-cyan-200/25 via-blue-200/25 to-purple-200/25 shadow-lg shadow-cyan-200/40 dark:from-cyan-500/25 dark:via-blue-500/25 dark:to-purple-500/25 dark:shadow-cyan-900/20"
+                          : "bg-slate-100 dark:bg-slate-900/60"
                       }`}
                     >
                       <div className="space-y-1">
-                        <p className="text-sm font-medium capitalize text-white">
+                        <p className="text-sm font-medium capitalize text-slate-900 dark:text-white">
                           {value.label}
                         </p>
-                        <p className="text-xs text-slate-300">
+                        <p className="text-xs text-slate-500 dark:text-slate-300">
                           {value.tasks.length} asset{value.tasks.length > 1 ? "s" : ""}
                         </p>
                       </div>
@@ -613,7 +653,7 @@ export default function App() {
                           }
                           className="peer sr-only"
                         />
-                        <span className="h-6 w-11 rounded-full bg-slate-700/80 transition peer-checked:bg-gradient-to-r peer-checked:from-cyan-400 peer-checked:to-purple-400" />
+                        <span className="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-gradient-to-r peer-checked:from-cyan-400 peer-checked:to-purple-400 dark:bg-slate-700/80" />
                         <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5" />
                       </label>
                     </li>
@@ -622,7 +662,7 @@ export default function App() {
               </ul>
             </section>
 
-            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-500/80 via-blue-500/80 to-purple-600/80 p-5 text-white shadow-2xl shadow-purple-900/40">
+            <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-cyan-400/80 via-blue-400/80 to-purple-500/80 p-5 text-white shadow-2xl shadow-purple-300/40 dark:border-white/10 dark:from-cyan-500/80 dark:via-blue-500/80 dark:to-purple-600/80 dark:shadow-purple-900/40">
               <h2 className="text-lg font-semibold">Export bundle</h2>
               <p className="mt-1 text-xs text-white/80">
                 Generates zipped folders with manifests, adaptive icons, Apple Contents.json, and Windows ICOs.
@@ -630,7 +670,7 @@ export default function App() {
               <button
                 disabled={!ready || busy}
                 onClick={buildZip}
-                className="mt-4 flex w-full items-center justify-center rounded-full bg-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg shadow-cyan-900/30 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 flex w-full items-center justify-center rounded-full bg-white/20 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg shadow-cyan-200/40 transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/10 dark:shadow-cyan-900/30 dark:hover:bg-white/20"
               >
                 {busy ? "Generating…" : "Download ZIP"}
               </button>
@@ -671,7 +711,7 @@ function Preview({
         src={dataUrl}
         width={size}
         height={size}
-        className="rounded-lg border border-neutral-800 bg-neutral-900"
+        className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
         alt="Preview"
       />
       {shapeOverlay && (
