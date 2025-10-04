@@ -448,7 +448,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="mt-6 flex flex-1 gap-6 overflow-hidden">
+        <div className="mt-6 flex flex-1 flex-col gap-6 overflow-hidden lg:flex-row">
           <div className="flex flex-[1.7] flex-col gap-4 overflow-hidden">
             <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-2xl shadow-teal-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-teal-900/20">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
