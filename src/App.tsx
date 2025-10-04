@@ -107,7 +107,13 @@ export default function App() {
     if (typeof document === "undefined") return;
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem("theme", theme);
+    try {
+      window.localStorage.setItem("theme", theme);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn("Failed to persist theme preference", error);
+      }
+    }
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
