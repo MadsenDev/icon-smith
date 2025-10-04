@@ -1,14 +1,81 @@
+type ImageWithIntrinsic = HTMLImageElement & {
+  dataset: DOMStringMap & {
+    intrinsicWidth?: string;
+    intrinsicHeight?: string;
+  };
+};
+
+function parseSvgLength(value: string | null): number | null {
+  if (!value) return null;
+  const numeric = Number.parseFloat(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function inferSvgDimensions(svgText: string): { width: number; height: number } | null {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgText, "image/svg+xml");
+  const svgEl = doc.documentElement;
+  if (!svgEl || svgEl.nodeName.toLowerCase() !== "svg") {
+    return null;
+  }
+
+  let width = parseSvgLength(svgEl.getAttribute("width"));
+  let height = parseSvgLength(svgEl.getAttribute("height"));
+
+  if ((!width || !height) && svgEl.hasAttribute("viewBox")) {
+    const viewBox = svgEl.getAttribute("viewBox")?.trim();
+    if (viewBox) {
+      const parts = viewBox
+        .replace(/,/g, " ")
+        .split(/\s+/)
+        .map((part) => Number.parseFloat(part))
+        .filter((num) => Number.isFinite(num));
+      if (parts.length === 4) {
+        const [, , vbWidth, vbHeight] = parts;
+        width = width ?? (vbWidth > 0 ? vbWidth : null);
+        height = height ?? (vbHeight > 0 ? vbHeight : null);
+      }
+    }
+  }
+
+  if (width && height) {
+    return { width, height };
+  }
+
+  return null;
+}
+
 export async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+
+  try {
+    const loadedImg = await new Promise<ImageWithIntrinsic>((resolve, reject) => {
+      img.onload = () => resolve(img as ImageWithIntrinsic);
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = url;
+    });
+
+    if (
+      file.type.includes("svg") &&
+      (loadedImg.naturalWidth === 0 || loadedImg.naturalHeight === 0)
+    ) {
+      try {
+        const text = await file.text();
+        const dimensions = inferSvgDimensions(text);
+        if (dimensions) {
+          loadedImg.dataset.intrinsicWidth = `${dimensions.width}`;
+          loadedImg.dataset.intrinsicHeight = `${dimensions.height}`;
+        }
+      } catch (error) {
+        // Ignore parsing failures and fall back to natural dimensions.
+      }
+    }
+
+    return loadedImg;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 export function renderToCanvas(
@@ -24,10 +91,27 @@ export function renderToCanvas(
   }
   ctx.clearRect(0, 0, size, size);
 
-  const inner = Math.round(size * (1 - padPct * 2));
-  const ratio = Math.min(inner / src.naturalWidth, inner / src.naturalHeight);
-  const w = Math.round(src.naturalWidth * ratio);
-  const h = Math.round(src.naturalHeight * ratio);
+  const intrinsicWidth = (() => {
+    const datasetWidth = Number.parseFloat(src.dataset?.intrinsicWidth ?? "");
+    if (Number.isFinite(datasetWidth) && datasetWidth > 0) return datasetWidth;
+    if (src.naturalWidth > 0) return src.naturalWidth;
+    if (src.width > 0) return src.width;
+    return 1;
+  })();
+
+  const intrinsicHeight = (() => {
+    const datasetHeight = Number.parseFloat(src.dataset?.intrinsicHeight ?? "");
+    if (Number.isFinite(datasetHeight) && datasetHeight > 0) return datasetHeight;
+    if (src.naturalHeight > 0) return src.naturalHeight;
+    if (src.height > 0) return src.height;
+    return 1;
+  })();
+
+  const inner = Math.max(1, Math.round(size * (1 - padPct * 2)));
+  const ratio = Math.min(inner / intrinsicWidth, inner / intrinsicHeight);
+  const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : inner / Math.max(intrinsicWidth, intrinsicHeight, 1);
+  const w = Math.max(1, Math.round(intrinsicWidth * safeRatio));
+  const h = Math.max(1, Math.round(intrinsicHeight * safeRatio));
   const x = Math.round((size - w) / 2);
   const y = Math.round((size - h) / 2);
   ctx.drawImage(src, x, y, w, h);
