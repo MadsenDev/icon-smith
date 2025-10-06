@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSeed } from "../hooks/useSeed";
 import {
   dataFieldPresets,
@@ -6,6 +6,7 @@ import {
   datasetToJson,
   type DataFieldDefinition,
   type DataFieldType,
+  type DatasetRecord,
   generateDataset,
 } from "../utils/data";
 
@@ -29,6 +30,7 @@ export default function DataSmithPage() {
   const [integerMin, setIntegerMin] = useState<number>(0);
   const [integerMax, setIntegerMax] = useState<number>(100);
   const [format, setFormat] = useState<"json" | "csv">("json");
+  const [datasetName, setDatasetName] = useState<string>("synthetic-dataset");
 
   const { seed, setSeed, reseed } = useSeed();
 
@@ -57,6 +59,15 @@ export default function DataSmithPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-slate-200">
+            <label className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-black/30 p-3 text-[10px] uppercase tracking-[0.35em] text-cyan-200/70">
+              Dataset name
+              <input
+                value={datasetName}
+                onChange={(event) => setDatasetName(event.target.value)}
+                className="rounded-xl border border-white/10 bg-white/10 px-3 py-1.5 text-xs text-white outline-none"
+                placeholder="synthetic-dataset"
+              />
+            </label>
             <SeedControls seed={seed} onChange={setSeed} onReseed={reseed} />
             <FormatToggle format={format} onChange={setFormat} />
           </div>
@@ -77,7 +88,7 @@ export default function DataSmithPage() {
             onIntegerMinChange={setIntegerMin}
             onIntegerMaxChange={setIntegerMax}
           />
-          <PreviewPanel exported={exported} format={format} />
+          <PreviewPanel exported={exported} format={format} name={datasetName} />
         </section>
 
         <aside className="space-y-6">
@@ -85,7 +96,9 @@ export default function DataSmithPage() {
             records={dataset.records.length}
             fields={fields.length}
             format={format}
+            name={datasetName}
           />
+          <DatasetTable fields={fields} dataset={dataset} />
           <SchemaPanel />
           <TipsPanel />
         </aside>
@@ -96,6 +109,17 @@ export default function DataSmithPage() {
 
 function FieldConfigurator({ fields, onChange }: { fields: DataFieldDefinition[]; onChange: (fields: DataFieldDefinition[]) => void }) {
   const availableFields = dataFieldPresets.filter((preset) => !fields.some((field) => field.id === preset.id));
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(availableFields[0]?.id ?? "");
+
+  useEffect(() => {
+    if (availableFields.length === 0) {
+      setSelectedPresetId("");
+      return;
+    }
+    if (!availableFields.some((preset) => preset.id === selectedPresetId)) {
+      setSelectedPresetId(availableFields[0].id);
+    }
+  }, [availableFields, selectedPresetId]);
 
   return (
     <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-blue-900/20">
@@ -104,14 +128,41 @@ function FieldConfigurator({ fields, onChange }: { fields: DataFieldDefinition[]
         <button
           type="button"
           onClick={() => {
-            if (availableFields.length === 0) return;
-            onChange([...fields, availableFields[0]]);
+            if (!selectedPresetId) return;
+            const preset = availableFields.find((item) => item.id === selectedPresetId);
+            if (!preset) return;
+            onChange([...fields, { ...preset }]);
           }}
-          className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-slate-200 transition hover:bg-white/20"
+          className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-slate-200 transition hover:bg-white/20 disabled:opacity-50"
           disabled={availableFields.length === 0}
         >
           Add field
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-xs text-slate-200">
+        <label className="flex flex-col gap-1 text-[11px] uppercase tracking-[0.35em] text-cyan-200/70">
+          Choose preset
+          <select
+            value={selectedPresetId}
+            onChange={(event) => setSelectedPresetId(event.target.value)}
+            className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs text-white"
+          >
+            <option value="" disabled>
+              {availableFields.length === 0 ? "All presets in use" : "Select field"}
+            </option>
+            {availableFields.map((preset) => (
+              <option key={preset.id} value={preset.id} className="bg-slate-900">
+                {preset.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="text-[11px] text-slate-400">
+          {availableFields.length > 0
+            ? "Add presets in any order, then fine-tune labels and keys."
+            : "Every preset is represented in your schema."}
+        </p>
       </div>
 
       <div className="space-y-3">
@@ -127,6 +178,36 @@ function FieldConfigurator({ fields, onChange }: { fields: DataFieldDefinition[]
             onRemove={() => {
               onChange(fields.filter((item) => item.id !== field.id));
             }}
+            onDuplicate={() => {
+              const baseId = `${field.id || "field"}`;
+              let suffix = 2;
+              let nextId = `${baseId}-${suffix}`;
+              while (fields.some((item) => item.id === nextId)) {
+                suffix += 1;
+                nextId = `${baseId}-${suffix}`;
+              }
+              onChange([
+                ...fields.slice(0, index + 1),
+                { ...field, id: nextId, label: `${field.label} (${suffix})` },
+                ...fields.slice(index + 1),
+              ]);
+            }}
+            onMoveUp={() => {
+              if (index === 0) return;
+              const next = [...fields];
+              const [removed] = next.splice(index, 1);
+              next.splice(index - 1, 0, removed);
+              onChange(next);
+            }}
+            onMoveDown={() => {
+              if (index === fields.length - 1) return;
+              const next = [...fields];
+              const [removed] = next.splice(index, 1);
+              next.splice(index + 1, 0, removed);
+              onChange(next);
+            }}
+            canMoveUp={index > 0}
+            canMoveDown={index < fields.length - 1}
           />
         ))}
         {fields.length === 0 && (
@@ -143,10 +224,20 @@ function FieldRow({
   field,
   onUpdate,
   onRemove,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
 }: {
   field: DataFieldDefinition;
   onUpdate: (field: DataFieldDefinition) => void;
   onRemove: () => void;
+  onDuplicate: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-slate-200 md:flex-row md:items-center md:justify-between">
@@ -183,13 +274,38 @@ function FieldRow({
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="rounded-full border border-white/10 bg-rose-500/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-rose-200 transition hover:bg-rose-500/20"
-        >
-          Remove
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-slate-200 transition hover:bg-white/20"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            onClick={onMoveUp}
+            className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-slate-200 transition hover:bg-white/20 disabled:opacity-50"
+            disabled={!canMoveUp}
+          >
+            Move up
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-slate-200 transition hover:bg-white/20 disabled:opacity-50"
+            disabled={!canMoveDown}
+          >
+            Move down
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-full border border-white/10 bg-rose-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-rose-200 transition hover:bg-rose-500/20"
+          >
+            Remove
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -271,7 +387,30 @@ function RecordControl({
   );
 }
 
-function PreviewPanel({ exported, format }: { exported: string; format: "json" | "csv" }) {
+function PreviewPanel({ exported, format, name }: { exported: string; format: "json" | "csv"; name: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(exported);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  }
+
+  function handleDownload() {
+    if (!exported) return;
+    const extension = format === "json" ? "json" : "csv";
+    const blob = new Blob([exported], {
+      type: format === "json" ? "application/json" : "text/csv",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeName = name.trim() || "dataset";
+    link.download = `${safeName.replace(/[^a-z0-9-_]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "dataset"}.${extension}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-purple-900/20">
       <div className="flex items-center justify-between">
@@ -284,43 +423,94 @@ function PreviewPanel({ exported, format }: { exported: string; format: "json" |
         className="h-64 w-full rounded-2xl border border-white/10 bg-black/40 p-4 font-mono text-xs text-slate-100 shadow-inner"
       />
       <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-        <CopyButton label="Copy"
-          value={exported}
-        />
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={`rounded-full border px-3 py-1 uppercase tracking-[0.35em] transition ${copied ? "border-emerald-400/60 bg-emerald-500/20 text-white" : "border-white/10 bg-white/10 text-slate-200 hover:bg-white/20"}`}
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <button
+          type="button"
+          onClick={handleDownload}
+          className="rounded-full border border-white/10 bg-white/10 px-3 py-1 uppercase tracking-[0.35em] text-slate-200 transition hover:bg-white/20"
+        >
+          Download file
+        </button>
       </div>
     </div>
   );
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
-      }}
-      className={`rounded-full border px-3 py-1 uppercase tracking-[0.35em] transition ${copied ? "border-emerald-400/60 bg-emerald-500/20 text-white" : "border-white/10 bg-white/10 text-slate-200 hover:bg-white/20"}`}
-    >
-      {copied ? "Copied" : label}
-    </button>
-  );
-}
-
-function DatasetSummary({ records, fields, format }: { records: number; fields: number; format: string }) {
+function DatasetSummary({ records, fields, format, name }: { records: number; fields: number; format: string; name: string }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-xs text-slate-300 shadow-xl shadow-cyan-900/20">
       <h2 className="text-sm font-semibold text-white">Dataset summary</h2>
       <ul className="mt-3 space-y-1">
+        <li>Name: <strong className="text-white">{name || "dataset"}</strong></li>
         <li><strong className="text-white">{records.toLocaleString()}</strong> rows</li>
         <li><strong className="text-white">{fields}</strong> fields</li>
         <li>Export: <span className="text-white uppercase">{format}</span></li>
       </ul>
     </div>
   );
+}
+
+function DatasetTable({ fields, dataset }: { fields: DataFieldDefinition[]; dataset: ReturnType<typeof generateDataset> }) {
+  if (fields.length === 0 || dataset.records.length === 0) {
+    return (
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-xs text-slate-300 shadow-xl shadow-emerald-900/20">
+        <h2 className="text-sm font-semibold text-white">Sample rows</h2>
+        <p className="mt-3 text-[11px] text-slate-400">Add fields and rows to see a preview table of generated data.</p>
+      </div>
+    );
+  }
+
+  const previewRows = dataset.records.slice(0, 6);
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-xl shadow-emerald-900/20">
+      <div className="flex items-center justify-between border-b border-white/10 bg-white/10 px-6 py-4 text-xs uppercase tracking-[0.35em] text-cyan-200/80">
+        <span>Sample rows</span>
+        <span className="text-[10px] text-slate-300">Showing {previewRows.length} of {dataset.records.length.toLocaleString()}</span>
+      </div>
+      <div className="max-h-64 overflow-auto">
+        <table className="min-w-full border-separate border-spacing-0 text-xs text-slate-200">
+          <thead className="bg-black/30 text-[11px] uppercase tracking-[0.35em] text-cyan-200/70">
+            <tr>
+              {fields.map((field) => (
+                <th key={field.id} className="sticky top-0 border-b border-white/10 px-4 py-2 text-left">
+                  {field.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {previewRows.map((record, rowIndex) => (
+              <tr key={rowIndex} className="odd:bg-white/5">
+                {fields.map((field) => (
+                  <td key={field.id} className="border-b border-white/5 px-4 py-2 font-mono text-[11px] text-slate-100">
+                    {formatCell(record[field.id])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function formatCell(value: DatasetRecord[string]) {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  }
+  return String(value);
 }
 
 function SchemaPanel() {
