@@ -53,10 +53,12 @@ export default function MarkdownSmithPage() {
   const strippedMarkdown = useMemo(() => stripFrontmatter(markdown), [markdown]);
   const html = useMemo(() => {
     const renderer = new marked.Renderer();
-    const slugger = new marked.Slugger();
-    renderer.heading = (text, level, raw) => {
-      const slug = slugger.slug(raw ?? text);
-      return `<h${level} id="${slug}">${text}</h${level}>`;
+    const textRenderer = new marked.TextRenderer();
+    renderer.heading = (token) => {
+      const inline = renderer.parser.parseInline(token.tokens);
+      const plain = renderer.parser.parseInline(token.tokens, textRenderer);
+      const slug = slugify(typeof plain === "string" ? plain : String(plain));
+      return `<h${token.depth} id="${slug}">${inline}</h${token.depth}>`;
     };
     return marked.parse(strippedMarkdown, { breaks: true, renderer });
   }, [strippedMarkdown]);
@@ -78,13 +80,12 @@ export default function MarkdownSmithPage() {
 
   const headings = useMemo<TocHeading[]>(() => {
     const regex = /^(\#{1,6})\s+(.+)$/gm;
-    const slugger = new marked.Slugger();
     const collected: TocHeading[] = [];
     let match: RegExpExecArray | null;
     while ((match = regex.exec(strippedMarkdown)) !== null) {
       const level = match[1].length;
       const text = match[2].trim();
-      const slug = slugger.slug(text);
+      const slug = slugify(text);
       collected.push({ level, text, slug });
     }
     return collected;
