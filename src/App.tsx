@@ -185,18 +185,63 @@ function RootLayout() {
 
 function HomePage() {
   const [query, setQuery] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set<string>());
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set<string>());
+  const [sortOption, setSortOption] = useState<"featured" | "az">("featured");
 
   const normalizedQuery = query.trim().toLowerCase();
 
+  const categoryOptions = useMemo(() => {
+    const categories = new Set<string>();
+    dashboardCards.forEach((card) => categories.add(card.category));
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
+  }, []);
+
+  const tagOptions = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    dashboardCards.forEach((card) => {
+      card.tags.forEach((tag) => {
+        const next = (tagCounts.get(tag) ?? 0) + 1;
+        tagCounts.set(tag, next);
+      });
+    });
+    return Array.from(tagCounts.entries())
+      .sort((a, b) => {
+        if (b[1] === a[1]) return a[0].localeCompare(b[0]);
+        return b[1] - a[1];
+      })
+      .map(([tag]) => tag);
+  }, []);
+
   const filteredCards = useMemo(() => {
-    if (!normalizedQuery) return dashboardCards;
-    return dashboardCards.filter((card) => {
+    const queryFilter = (card: DashboardCard) => {
+      if (!normalizedQuery) return true;
       const haystack = [card.title, card.description, card.category, card.tags.join(" ")]
         .join(" ")
         .toLowerCase();
       return haystack.includes(normalizedQuery);
-    });
-  }, [normalizedQuery]);
+    };
+
+    const categoryFilter = (card: DashboardCard) => {
+      if (selectedCategories.size === 0) return true;
+      return selectedCategories.has(card.category);
+    };
+
+    const tagFilter = (card: DashboardCard) => {
+      if (selectedTags.size === 0) return true;
+      return Array.from(selectedTags).every((tag) => card.tags.includes(tag));
+    };
+
+    let filtered = dashboardCards.filter(
+      (card) => queryFilter(card) && categoryFilter(card) && tagFilter(card),
+    );
+
+    if (sortOption === "az") {
+      filtered = [...filtered].sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    return filtered;
+  }, [normalizedQuery, selectedCategories, selectedTags, sortOption]);
 
   const categories = useMemo(() => {
     const map = new Map<string, DashboardCard[]>();
@@ -205,24 +250,132 @@ function HomePage() {
       list.push(card);
       map.set(card.category, list);
     });
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [filteredCards]);
+
+  const hasFilters =
+    normalizedQuery !== "" || selectedCategories.size > 0 || selectedTags.size > 0 || sortOption !== "featured";
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) {
+        next.delete(tag);
+      } else {
+        next.add(tag);
+      }
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setQuery("");
+    setSelectedCategories(new Set<string>());
+    setSelectedTags(new Set<string>());
+    setSortOption("featured");
+  };
 
   return (
     <div className="space-y-10 text-slate-200">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-cyan-900/20 backdrop-blur">
-        <label className="flex flex-col gap-3 text-sm text-slate-200">
-          <span className="text-xs uppercase tracking-[0.35em] text-cyan-200/70">Search tools</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by name, tag, or capability"
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white outline-none focus:border-cyan-400/60 focus:bg-black/40"
-          />
-        </label>
-        <p className="mt-3 text-xs text-slate-400">
-          Showing {filteredCards.length} tool{filteredCards.length === 1 ? "" : "s"}
-          {normalizedQuery ? ` for “${query.trim()}”` : ""}.
+      <div className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-cyan-900/20 backdrop-blur">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <label className="flex w-full flex-col gap-3 text-sm text-slate-200 lg:max-w-lg">
+            <span className="text-xs uppercase tracking-[0.35em] text-cyan-200/70">Search tools</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by name, tag, or capability"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white outline-none focus:border-cyan-400/60 focus:bg-black/40"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+            <label className="flex items-center gap-2">
+              <span className="uppercase tracking-[0.35em] text-cyan-200/70">Sort</span>
+              <select
+                value={sortOption}
+                onChange={(event) => setSortOption(event.target.value as typeof sortOption)}
+                className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs uppercase tracking-[0.3em] text-white outline-none focus:border-cyan-400/60"
+              >
+                <option value="featured">Featured order</option>
+                <option value="az">Alphabetical A–Z</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={!hasFilters}
+              className="rounded-full border border-white/10 bg-white/10 px-4 py-1 uppercase tracking-[0.35em] text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Clear filters
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-200/70">Categories</p>
+            <div className="flex flex-wrap gap-2">
+              {categoryOptions.map((category) => {
+                const active = selectedCategories.has(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => toggleCategory(category)}
+                    className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.3em] transition ${
+                      active
+                        ? "border-cyan-300/70 bg-cyan-500/30 text-white shadow shadow-cyan-500/30"
+                        : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-200/70">Tags</p>
+            <div className="flex flex-wrap gap-2">
+              {tagOptions.map((tag) => {
+                const active = selectedTags.has(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.3em] transition ${
+                      active
+                        ? "border-purple-300/70 bg-purple-500/30 text-white shadow shadow-purple-500/30"
+                        : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-400">
+          Showing {filteredCards.length} tool{filteredCards.length === 1 ? "" : "s"} out of {dashboardCards.length}
+          {normalizedQuery ? ` for “${query.trim()}”` : ""}
+          {selectedCategories.size > 0 ? ` in ${selectedCategories.size} categor${selectedCategories.size === 1 ? "y" : "ies"}` : ""}
+          {selectedTags.size > 0 ? ` tagged with ${Array.from(selectedTags).join(", ")}` : ""}.
         </p>
       </div>
 
@@ -239,7 +392,7 @@ function HomePage() {
             </header>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {cards.map((card) => (
-                <ToolCardItem key={card.title} card={card} />
+                <ToolCardItem key={card.title} card={card} highlight={normalizedQuery} />
               ))}
             </div>
           </section>
