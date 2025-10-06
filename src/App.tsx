@@ -1,736 +1,373 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
-import { Presets, type PresetKey } from "./presets";
-import {
-  loadImageFromFile,
-  renderToCanvas,
-  canvasToPNGBlob,
-  toMonochromeWhite,
-} from "./utils/image";
-import { encodeICO, type IconSource } from "./utils/ico";
+import { Suspense, useMemo, useState } from "react";
+import { Link, NavLink, Outlet, createBrowserRouter, RouterProvider } from "react-router-dom";
+import IconSmithPage from "./pages/IconSmith";
+import PaletteSmithPage from "./pages/PaletteSmith";
+import FaviconSmithPage from "./pages/FaviconSmith";
+import OGSmithPage from "./pages/OGSmith";
+import RenameSmithPage from "./pages/RenameSmith";
+import ContrastSmithPage from "./pages/ContrastSmith";
+import ShapeSmithPage from "./pages/ShapeSmith";
+import ShadowSmithPage from "./pages/ShadowSmith";
+import NoiseSmithPage from "./pages/NoiseSmith";
+import RegexSmithPage from "./pages/RegexSmith";
+import DiffSmithPage from "./pages/DiffSmith";
+import DataSmithPage from "./pages/DataSmith";
+import SpriteSmithPage from "./pages/SpriteSmith";
+import AssetSmithPage from "./pages/AssetSmith";
+import TokenSmithPage from "./pages/TokenSmith";
+import MetaSmithPage from "./pages/MetaSmith";
+import GradientSmithPage from "./pages/GradientSmith";
+import MarkdownSmithPage from "./pages/MarkdownSmith";
+import LocaleSmithPage from "./pages/LocaleSmith";
+import MockupSmithPage from "./pages/MockupSmith";
 
-const presetEntries = Object.entries(Presets) as [
-  PresetKey,
-  (typeof Presets)[PresetKey]
-][];
-const totalPresets = presetEntries.length;
-const largestTargetSize = Math.max(
-  ...presetEntries.flatMap(([, preset]) => preset.tasks.map((t) => t.size)),
-);
-const PREVIEW_BASE_SIZE = 256;
-
-type QualityHintSeverity = "info" | "warning" | "positive";
-
-type QualityHint = {
-  id: string;
-  severity: QualityHintSeverity;
+type DashboardCard = {
   title: string;
-  detail: string;
-};
-
-const severityStyles: Record<QualityHintSeverity, string> = {
-  info: "from-sky-500/20 via-blue-500/20 to-indigo-500/20 border-sky-400/40",
-  warning: "from-amber-500/25 via-orange-500/20 to-rose-500/20 border-amber-400/40",
-  positive: "from-emerald-500/20 via-teal-500/20 to-cyan-500/20 border-emerald-400/40",
-};
-
-type OverlayShape = {
-  id: string;
-  label: string;
   description: string;
-  borderRadius: string;
+  badge: string;
+  cta: string;
+  href: string;
+  category: string;
 };
 
-const overlayShapes: OverlayShape[] = [
+const dashboardCards: DashboardCard[] = [
   {
-    id: "circle",
-    label: "Circle",
-    description: "Maskable icons, Android adaptive foregrounds.",
-    borderRadius: "50%",
+    title: "IconSmith",
+    description: "Resize, pad, and package icons for every platform in seconds.",
+    badge: "<span role='img' aria-hidden='true'>🎯</span> Ready",
+    cta: "Launch tool",
+    href: "/icon-smith",
+    category: "Design",
   },
   {
-    id: "rounded",
-    label: "Rounded",
-    description: "Windows tiles and desktop launchers.",
-    borderRadius: "25%",
+    title: "PaletteSmith",
+    description: "Extract colour palettes, export Tailwind config, CSS variables, and JSON.",
+    badge: "<span role='img' aria-hidden='true'>🎨</span> Ready",
+    cta: "Launch tool",
+    href: "/palette-smith",
+    category: "Design",
   },
   {
-    id: "squircle",
-    label: "Squircle",
-    description: "iOS home screen footprint.",
-    borderRadius: "38%",
+    title: "FaviconSmith",
+    description: "Generate favicon sets and web manifest snippets from any source image.",
+    badge: "<span role='img' aria-hidden='true'>⚙️</span> Ready",
+    cta: "Launch tool",
+    href: "/favicon-smith",
+    category: "Assets",
+  },
+  {
+    title: "OGSmith",
+    description: "Compose on-brand Open Graph images with templated layouts.",
+    badge: "<span role='img' aria-hidden='true'>🖼️</span> Ready",
+    cta: "Launch tool",
+    href: "/og-smith",
+    category: "Content",
+  },
+  {
+    title: "RenameSmith",
+    description: "Batch rename assets using tokens and smart casing rules.",
+    badge: "<span role='img' aria-hidden='true'>🧰</span> Ready",
+    cta: "Launch tool",
+    href: "/rename-smith",
+    category: "Productivity",
+  },
+  {
+    title: "ContrastSmith",
+    description: "Audit colour pairs against WCAG AA/AAA targets with actionable tweaks.",
+    badge: "<span role='img' aria-hidden='true'>🌓</span> Ready",
+    cta: "Launch tool",
+    href: "/contrast-smith",
+    category: "Accessibility",
+  },
+  {
+    title: "ShapeSmith",
+    description: "Generate hero blobs, waves, stars, and patterns with exportable SVG/React code.",
+    badge: "<span role='img' aria-hidden='true'>🪩</span> Ready",
+    cta: "Launch tool",
+    href: "/shape-smith",
+    category: "Design",
+  },
+  {
+    title: "ShadowSmith",
+    description: "Craft multi-layer shadows, glassmorphism, and neon glows with exportable CSS.",
+    badge: "<span role='img' aria-hidden='true'>🌌</span> Ready",
+    cta: "Launch tool",
+    href: "/shadow-smith",
+    category: "Design",
+  },
+  {
+    title: "NoiseSmith",
+    description: "Generate subtle film grain, dust, and scan line textures on demand.",
+    badge: "<span role='img' aria-hidden='true'>🎚️</span> Ready",
+    cta: "Launch tool",
+    href: "/noise-smith",
+    category: "Design",
+  },
+  {
+    title: "RegexSmith",
+    description: "Explore regex matches, replacements, and explanations with live feedback.",
+    badge: "<span role='img' aria-hidden='true'>🔍</span> Ready",
+    cta: "Launch tool",
+    href: "/regex-smith",
+    category: "Utilities",
+  },
+  {
+    title: "DiffSmith",
+    description: "Compare text or JSON, view unified or split diffs, and summarise changes.",
+    badge: "<span role='img' aria-hidden='true'>🧮</span> Ready",
+    cta: "Launch tool",
+    href: "/diff-smith",
+    category: "Utilities",
+  },
+  {
+    title: "DataSmith",
+    description: "Synthesize fake datasets with seeds, presets, and JSON/CSV exports.",
+    badge: "<span role='img' aria-hidden='true'>🧪</span> Ready",
+    cta: "Launch tool",
+    href: "/data-smith",
+    category: "Utilities",
+  },
+  {
+    title: "SpriteSmith",
+    description: "Combine icons into spritesheets with CSS/JSON metadata exports.",
+    badge: "<span role='img' aria-hidden='true'>🧩</span> Ready",
+    cta: "Launch tool",
+    href: "/sprite-smith",
+    category: "Assets",
+  },
+  {
+    title: "AssetSmith",
+    description: "Compress images with adjustable quality and bundle exports.",
+    badge: "<span role='img' aria-hidden='true'>📦</span> Ready",
+    cta: "Launch tool",
+    href: "/asset-smith",
+    category: "Assets",
+  },
+  {
+    title: "TokenSmith",
+    description: "Convert design tokens between JSON, CSS variables, Tailwind config, and more.",
+    badge: "<span role='img' aria-hidden='true'>🎛️</span> Ready",
+    cta: "Launch tool",
+    href: "/token-smith",
+    category: "Design",
+  },
+  {
+    title: "MetaSmith",
+    description: "Build and validate head metadata: favicons, OG/Twitter tags, manifests.",
+    badge: "<span role='img' aria-hidden='true'>🧭</span> Ready",
+    cta: "Launch tool",
+    href: "/meta-smith",
+    category: "Metadata",
+  },
+  {
+    title: "GradientSmith",
+    description: "Craft multi-stop gradients, export CSS/Tailwind, preview on mock devices.",
+    badge: "<span role='img' aria-hidden='true'>🌈</span> Ready",
+    cta: "Launch tool",
+    href: "/gradient-smith",
+    category: "Design",
+  },
+  {
+    title: "MarkdownSmith",
+    description: "Convert Markdown to HTML/MDX, edit frontmatter, generate OG previews.",
+    badge: "<span role='img' aria-hidden='true'>📝</span> Ready",
+    cta: "Launch tool",
+    href: "/markdown-smith",
+    category: "Content",
+  },
+  {
+    title: "LocaleSmith",
+    description: "Compare, merge, and QA localisation files across languages.",
+    badge: "<span role='img' aria-hidden='true'>🌍</span> Ready",
+    cta: "Launch tool",
+    href: "/locale-smith",
+    category: "Productivity",
+  },
+  {
+    title: "MockupSmith",
+    description: "Place assets into device/browser mockups for presentations and OG images.",
+    badge: "<span role='img' aria-hidden='true'>📱</span> Ready",
+    cta: "Launch tool",
+    href: "/mockup-smith",
+    category: "Design",
   },
 ];
 
+const navLinks = dashboardCards.map(({ href, title }) => ({ to: href.replace(/^\//, ""), label: title }));
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: "icon-smith", element: <IconSmithPage /> },
+      { path: "palette-smith", element: <PaletteSmithPage /> },
+      { path: "favicon-smith", element: <FaviconSmithPage /> },
+      { path: "og-smith", element: <OGSmithPage /> },
+      { path: "rename-smith", element: <RenameSmithPage /> },
+      { path: "contrast-smith", element: <ContrastSmithPage /> },
+      { path: "shape-smith", element: <ShapeSmithPage /> },
+      { path: "shadow-smith", element: <ShadowSmithPage /> },
+      { path: "noise-smith", element: <NoiseSmithPage /> },
+      { path: "regex-smith", element: <RegexSmithPage /> },
+      { path: "diff-smith", element: <DiffSmithPage /> },
+      { path: "data-smith", element: <DataSmithPage /> },
+      { path: "sprite-smith", element: <SpriteSmithPage /> },
+      { path: "asset-smith", element: <AssetSmithPage /> },
+      { path: "token-smith", element: <TokenSmithPage /> },
+      { path: "meta-smith", element: <MetaSmithPage /> },
+      { path: "gradient-smith", element: <GradientSmithPage /> },
+      { path: "markdown-smith", element: <MarkdownSmithPage /> },
+      { path: "locale-smith", element: <LocaleSmithPage /> },
+      { path: "mockup-smith", element: <MockupSmithPage /> },
+    ],
+  },
+]);
+
 export default function App() {
-  const [file, setFile] = useState<File | null>(null);
-  const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
-  const [selected, setSelected] = useState<Record<PresetKey, boolean>>({
-    web: true,
-    android: true,
-    ios: true,
-    windows: true,
-    desktop: true,
-  });
-  const [padPct, setPadPct] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [qualityHints, setQualityHints] = useState<QualityHint[]>([]);
-  const [baseQualityHints, setBaseQualityHints] = useState<QualityHint[]>([]);
-  const [shapeOverlay, setShapeOverlay] = useState<string | null>("circle");
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      const stored = window.localStorage.getItem("theme");
-      if (stored === "light" || stored === "dark") {
-        return stored;
-      }
-    }
-    return "dark";
-  });
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dragDepth = useRef(0);
-
-  const ready = !!imgEl;
-  const selectedCount = useMemo(
-    () => (Object.values(selected) as boolean[]).filter(Boolean).length,
-    [selected],
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-950 text-slate-200">Loading tools…</div>}>
+      <RouterProvider router={router} />
+    </Suspense>
   );
-  const padPercentage = Math.round(padPct * 100);
-  const fileLabel = file?.name ?? "No file selected yet";
-  const originalDimensions = imgEl
-    ? `${imgEl.naturalWidth} × ${imgEl.naturalHeight}`
-    : null;
-  const themeButtonLabel = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+}
 
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.style.colorScheme = theme;
-    try {
-      window.localStorage.setItem("theme", theme);
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.warn("Failed to persist theme preference", error);
-      }
-    }
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  }, []);
-
-  const evaluateQuality = useCallback((image: HTMLImageElement, source?: File) => {
-    const hints: QualityHint[] = [];
-    const { naturalWidth: width, naturalHeight: height } = image;
-    const minSide = Math.min(width, height);
-    const maxSide = Math.max(width, height);
-    const aspectRatio = width / height;
-
-    if (minSide < largestTargetSize) {
-      hints.push({
-        id: "resolution",
-        severity: "warning",
-        title: "Source image is smaller than the largest export",
-        detail: `Largest preset needs ${largestTargetSize}px — your shortest side is ${minSide}px. Upscaling may soften details.`,
-      });
-    } else if (minSide >= largestTargetSize * 1.4) {
-      hints.push({
-        id: "resolution-positive",
-        severity: "positive",
-        title: "Plenty of resolution headroom",
-        detail: "The artwork comfortably covers every target size. Expect crisp exports.",
-      });
-    }
-
-    if (Math.abs(1 - aspectRatio) > 0.15) {
-      const ratioLabel = aspectRatio > 1 ? "wide" : "tall";
-      hints.push({
-        id: "aspect-ratio",
-        severity: "info",
-        title: "Artwork isn’t square",
-        detail: `The image is fairly ${ratioLabel}. Consider using a square artboard to avoid extra padding in some outputs.`,
-      });
-    }
-
-    const transparentRatio = measureAlphaCoverage(image);
-    if (transparentRatio < 0.01) {
-      hints.push({
-        id: "alpha",
-        severity: "info",
-        title: "Opaque background detected",
-        detail: "Most pixels are fully opaque. Trim any solid background if you want rounded or maskable variants to breathe.",
-      });
-    } else if (transparentRatio > 0.5) {
-      hints.push({
-        id: "alpha-positive",
-        severity: "positive",
-        title: "Strong transparency coverage",
-        detail: "Transparent regions will translate nicely into adaptive, maskable, and favicon outputs.",
-      });
-    }
-
-    if (source?.type?.includes("svg")) {
-      hints.push({
-        id: "svg",
-        severity: "positive",
-        title: "Vector input detected",
-        detail: "SVG sources stay razor sharp at every size and avoid PNG compression artifacts.",
-      });
-    }
-
-    setBaseQualityHints(hints);
-  }, []);
-
-  useEffect(() => {
-    const hints = [...baseQualityHints];
-
-    if (imgEl) {
-      if (padPct > 0.18) {
-        hints.push({
-          id: "padding-high",
-          severity: "info",
-          title: "Generous padding applied",
-          detail: "High padding keeps icons airy, but double-check small sizes so key details remain legible.",
-        });
-      } else if (padPct < 0.02) {
-        hints.push({
-          id: "padding-low",
-          severity: "info",
-          title: "Minimal padding",
-          detail: "Tight padding maximises imprint area. Ensure no edges clip when exported as rounded shapes.",
-        });
-      }
-    }
-
-    setQualityHints(hints);
-  }, [baseQualityHints, imgEl, padPct]);
-
-  async function applyFile(f: File | null | undefined) {
-    if (!f) return;
-    setFile(f);
-    const img = await loadImageFromFile(f);
-    setImgEl(img);
-    evaluateQuality(img, f);
-  }
-
-  async function handleFileList(list: FileList | null) {
-    if (!list || list.length === 0) return;
-    await applyFile(list[0]);
-  }
-
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    await handleFileList(e.target.files);
-    e.target.value = "";
-  }
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isDragging) setIsDragging(true);
-  };
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragDepth.current += 1;
-    if (!isDragging) setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragDepth.current = Math.max(0, dragDepth.current - 1);
-    if (dragDepth.current === 0) {
-      setIsDragging(false);
-    }
-  };
-
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragDepth.current = 0;
-    setIsDragging(false);
-    await handleFileList(e.dataTransfer?.files ?? null);
-  };
-
-  function measureAlphaCoverage(image: HTMLImageElement): number {
-    const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return 0;
-    ctx.drawImage(image, 0, 0);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let transparent = 0;
-    let total = data.length / 4;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] < 32) {
-        transparent += 1;
-      }
-    }
-    return transparent / total;
-  }
-
-  async function buildZip() {
-    if (!imgEl) return;
-    setBusy(true);
-    try {
-      const zip = new JSZip();
-      const chosen = (Object.keys(selected) as PresetKey[]).filter(
-        (k) => selected[k],
-      );
-
-      for (const key of chosen) {
-        const preset = Presets[key];
-        const generatedBlobs = new Map<string, Blob>();
-
-        for (const t of preset.tasks) {
-          const localPad = t.padPct ?? padPct;
-          let canvas = renderToCanvas(imgEl, t.size, localPad);
-          if (t.monochrome) canvas = toMonochromeWhite(canvas);
-          const blob = await canvasToPNGBlob(canvas);
-          zip.file(t.path, blob);
-          generatedBlobs.set(t.path, blob);
-        }
-
-        if (preset.extras) {
-          for (const [path, content] of preset.extras) {
-            zip.file(path, content);
-          }
-        }
-
-        if (key === "web") {
-          const favPaths = [
-            "web/favicon-16.png",
-            "web/favicon-32.png",
-            "web/favicon-48.png",
-          ];
-          const favPngs: IconSource[] = favPaths
-            .map((p) => {
-              const blob = generatedBlobs.get(p);
-              const size = parseInt(p.match(/(\d+)/)?.[0] ?? "0", 10);
-              if (!blob || !size) return null;
-              return { size, blob };
-            })
-            .filter((entry): entry is IconSource => Boolean(entry));
-          if (favPngs.length === favPaths.length) {
-            const icoBuf = await encodeICO(favPngs);
-            zip.file("web/favicon.ico", icoBuf);
-            for (const p of favPaths) {
-              zip.remove(p);
-            }
-          }
-          zip.file(
-            "web/manifest-snippet.json",
-            JSON.stringify(
-              {
-                icons: [
-                  {
-                    src: "/icons/web/icon-192.png",
-                    sizes: "192x192",
-                    type: "image/png",
-                  },
-                  {
-                    src: "/icons/web/icon-512.png",
-                    sizes: "512x512",
-                    type: "image/png",
-                  },
-                  {
-                    src: "/icons/web/icon-192-maskable.png",
-                    sizes: "192x192",
-                    type: "image/png",
-                    purpose: "maskable",
-                  },
-                  {
-                    src: "/icons/web/icon-512-maskable.png",
-                    sizes: "512x512",
-                    type: "image/png",
-                    purpose: "maskable",
-                  },
-                ],
-              },
-              null,
-              2,
-            ),
-          );
-        }
-
-        if (key === "windows") {
-          const sizes = [16, 24, 32, 48, 64, 128, 256];
-          const pngs: IconSource[] = sizes
-            .map((s) => {
-              const blob = generatedBlobs.get(`windows/ico-${s}.png`);
-              if (!blob) return null;
-              return { size: s, blob };
-            })
-            .filter((entry): entry is IconSource => Boolean(entry));
-          if (pngs.length === sizes.length) {
-            const ico = await encodeICO(pngs);
-            zip.file("windows/app.ico", ico);
-          }
-        }
-      }
-
-      const name = file?.name?.replace(/\.\w+$/, "") || "icon";
-      const out = await zip.generateAsync({ type: "blob" });
-      saveAs(out, `${name}-icons.zip`);
-    } finally {
-      setBusy(false);
-    }
-  }
+function RootLayout() {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const primaryNav = navLinks.slice(0, 4);
+  const secondaryNav = navLinks.slice(4);
 
   return (
-    <div
-      className="relative flex min-h-screen flex-col overflow-hidden bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-50"
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-200/40 via-transparent to-transparent blur-3xl dark:from-teal-500/40" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-purple-300/30 via-transparent to-transparent blur-3xl dark:from-purple-600/30" />
-      <div className="relative z-10 flex h-screen flex-col px-6 py-8 lg:px-12">
-        {isDragging && (
-          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-slate-100/80 backdrop-blur dark:bg-slate-950/70">
-            <div className="rounded-3xl border border-cyan-400/60 bg-white px-10 py-8 text-center text-slate-900 shadow-[0_25px_80px_-40px_rgba(103,232,249,0.4)] dark:bg-slate-900/80 dark:text-slate-100 dark:shadow-[0_25px_80px_-40px_rgba(34,211,238,0.6)]">
-              <p className="text-lg font-semibold">Drop your SVG or PNG</p>
-              <p className="mt-2 text-sm text-cyan-600 dark:text-cyan-200/80">We&apos;ll process it instantly in your browser.</p>
-            </div>
-          </div>
-        )}
-        <header className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-cyan-700 shadow-lg shadow-cyan-200/40 ring-1 ring-cyan-200 backdrop-blur dark:bg-white/5 dark:text-cyan-200/80 dark:shadow-cyan-500/10 dark:ring-white/10">
-              IconSmith Studio
-            </span>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white lg:text-3xl">
-              Browser-native icon foundry.
-            </h1>
-            <p className="max-w-xl text-xs text-slate-600 dark:text-slate-300 lg:text-sm">
-              Upload once, fine-tune padding, and export polished icon bundles for every platform without leaving the tab.
-            </p>
-          </div>
-          <div className="flex flex-col items-stretch gap-2 self-start lg:items-end">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-pressed={theme === "dark"}
-              aria-label={themeButtonLabel}
-              title={themeButtonLabel}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-[11px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 dark:border-white/10 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/20"
-            >
-              <span role="img" aria-hidden="true">
-                {theme === "dark" ? "🌞" : "🌙"}
-              </span>
-              <span className="tracking-[0.25em] uppercase">
-                {theme === "dark" ? "Light" : "Dark"} mode
-              </span>
-            </button>
-            <div className="grid grid-cols-2 gap-2 self-start rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 shadow-lg shadow-slate-200/60 backdrop-blur lg:max-w-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:shadow-cyan-900/20">
-              <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-600 dark:text-cyan-200/80">
-                Targets
-              </p>
-              <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">
-                {selectedCount}/{totalPresets}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-purple-600 dark:text-purple-200/80">
-                Padding
-              </p>
-              <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">
-                {padPercentage}%
-              </p>
-            </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="mt-6 flex flex-1 flex-col gap-6 overflow-hidden lg:flex-row">
-          <div className="flex flex-[1.7] flex-col gap-4 overflow-hidden">
-            <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-2xl shadow-teal-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-teal-900/20">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="space-y-0.5">
-                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">Source Artwork</h2>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
-                    SVG or transparent PNG recommended. High resolution gives crisp results.
-                  </p>
-                </div>
-                <label className="group relative inline-flex cursor-pointer items-center overflow-hidden rounded-full border border-cyan-400/50 bg-gradient-to-r from-cyan-500/80 via-blue-500/80 to-purple-500/80 px-4 py-1.5 text-[11px] font-medium text-white shadow-lg shadow-cyan-500/30 transition hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 sm:px-4 sm:text-xs">
-                  <span className="z-10 truncate max-w-[170px] text-left sm:max-w-[210px]">{fileLabel}</span>
-                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 transition group-hover:opacity-100" />
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    accept="image/*,.svg"
-                    onChange={onPick}
-                    className="absolute inset-0 h-full w-full opacity-0"
-                  />
-                </label>
-              </div>
-
-              {imgEl ? (
-                <div className="mt-4 flex flex-1 min-h-0 gap-4">
-                  <div className="flex w-[220px] flex-col gap-3">
-                    <div className="flex flex-col rounded-2xl border border-slate-200 bg-slate-100 p-3 shadow-inner shadow-cyan-200/30 dark:border-white/10 dark:bg-slate-950/60 dark:shadow-cyan-500/10">
-                      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.4em] text-cyan-600 dark:text-cyan-200/70">
-                        <span>Preview</span>
-                        <span className="text-[9px] font-normal tracking-[0.2em] text-slate-500 dark:text-slate-300">
-                          Alpha intact
-                        </span>
-                      </div>
-                      <div className="mt-3 flex flex-1 items-center justify-center">
-                        <Preview img={imgEl} size={176} padPct={padPct} shapeOverlay={shapeOverlay} />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 text-[10px] text-slate-600 dark:text-slate-200 sm:text-xs">
-                      {overlayShapes.map((shape) => (
-                        <button
-                          key={shape.id}
-                          type="button"
-                          onClick={() => setShapeOverlay(shape.id)}
-                          className={`flex flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-2 text-center transition hover:border-cyan-400/60 dark:border-white/10 dark:bg-white/5 ${
-                            shapeOverlay === shape.id
-                              ? "shadow-lg shadow-cyan-200/60 ring-1 ring-cyan-300/60 dark:shadow-cyan-500/20 dark:ring-cyan-400/60"
-                              : ""
-                          }`}
-                        >
-                          <span className="text-[11px] font-medium text-slate-900 dark:text-white">{shape.label}</span>
-                          <span className="text-[9px] text-slate-500 dark:text-slate-300">{shape.description}</span>
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setShapeOverlay(null)}
-                        className={`flex flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-2 text-center transition hover:border-cyan-400/60 dark:border-white/10 dark:bg-white/5 ${
-                          shapeOverlay === null
-                            ? "shadow-lg shadow-cyan-200/60 ring-1 ring-cyan-300/60 dark:shadow-cyan-500/20 dark:ring-cyan-400/60"
-                            : ""
-                        }`}
-                      >
-                        <span className="text-[11px] font-medium text-slate-900 dark:text-white">None</span>
-                        <span className="text-[9px] text-slate-500 dark:text-slate-300">Original canvas</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid flex-1 grid-cols-2 gap-3 text-[11px] text-slate-600 dark:text-slate-200 sm:text-xs">
-                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-white/10 dark:bg-white/5">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-600 dark:text-purple-200/80">
-                        Original size
-                      </p>
-                      <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">
-                        {originalDimensions ?? "—"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-white/10 dark:bg-white/5">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-600 dark:text-purple-200/80">
-                        Output padding
-                      </p>
-                      <p className="mt-1 text-base font-medium text-slate-900 dark:text-white">
-                        {padPercentage}%
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-300">
-                        Maskable icons add ~12% automatically.
-                      </p>
-                    </div>
-                    <div className="col-span-2 rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-white/10 dark:bg-white/5">
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-purple-600 dark:text-purple-200/80">
-                        Output bundle includes
-                      </p>
-                      <ul className="mt-2 grid gap-1 text-[11px] text-slate-500 dark:text-slate-300 sm:text-xs">
-                        <li>• Web manifest + favicon.ico</li>
-                        <li>• Android adaptive & monochrome</li>
-                        <li>• iOS Contents.json ready for Xcode</li>
-                      </ul>
-                    </div>
-                    {qualityHints.length > 0 && (
-                      <div className="col-span-2 space-y-2">
-                        {qualityHints.map((hint) => (
-                          <div
-                            key={hint.id}
-                            className={`rounded-2xl border px-3 py-3 text-left text-[11px] text-slate-900 shadow-lg dark:text-slate-100 ${severityStyles[hint.severity]}`}
-                          >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-700 dark:text-white/80">
-                              {hint.title}
-                            </p>
-                            <p className="mt-2 text-xs text-slate-700 dark:text-white/80">{hint.detail}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-6 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300/60 bg-white/70 text-center text-sm text-slate-600 dark:border-white/15 dark:bg-slate-900/60 dark:text-slate-300">
-                  Click the upload chip or drag &amp; drop an SVG/PNG anywhere on this canvas to begin.
-                </div>
-              )}
-            </section>
-
-            <section className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-2xl shadow-purple-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-purple-900/20">
-              <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-                <div className="space-y-0.5">
-                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">Global Padding</h2>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
-                    Fine-tune negative space for all rendered sizes simultaneously.
-                  </p>
-                </div>
-                <div className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-cyan-600 dark:text-cyan-200/70">
-                    Current
-                  </span>
-                  <span className="ml-2 text-base font-semibold text-slate-900 dark:text-white">{padPercentage}%</span>
-                </div>
-              </div>
-              <div className="mt-3">
-                <input
-                  type="range"
-                  min={0}
-                  max={20}
-                  value={padPct * 100}
-                  onChange={(e) => setPadPct(parseInt(e.target.value, 10) / 100)}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:bg-slate-900/60 dark:accent-cyan-400 dark:focus:ring-cyan-400/70"
-                />
-                <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.4em] text-slate-400 dark:text-slate-400">
-                  <span>0%</span>
-                  <span>5%</span>
-                  <span>10%</span>
-                  <span>15%</span>
-                  <span>20%</span>
-                </div>
-              </div>
-            </section>
-      </div>
-
-          <aside className="flex flex-[1] flex-col gap-4 overflow-hidden">
-            <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-2xl shadow-blue-200/40 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-blue-900/20">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">Preset Targets</h2>
-                <button
-                  type="button"
-                  className="text-[11px] uppercase tracking-[0.35em] text-cyan-600 transition hover:text-cyan-500 dark:text-cyan-200/80 dark:hover:text-cyan-200"
-                  onClick={() =>
-                    setSelected((prev) => {
-                      const anyUnchecked = presetEntries.some(([key]) => !prev[key]);
-                      if (anyUnchecked) {
-                        const next: Record<PresetKey, boolean> = { ...prev };
-                        for (const [key] of presetEntries) next[key] = true;
-                        return next;
-                      }
-                      const next: Record<PresetKey, boolean> = { ...prev };
-                      for (const [key] of presetEntries) next[key] = false;
-                      return next;
-                    })
+    <div className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-500/30 via-transparent to-transparent blur-3xl" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-purple-600/30 via-transparent to-transparent blur-3xl" />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 pb-12 pt-10 md:px-12">
+        <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <Link to="/" className="inline-flex items-center gap-3">
+            <span className="rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.3em] text-cyan-200/90 ring-1 ring-white/20">Smith Suite</span>
+            <h1 className="text-2xl font-semibold text-white">Forge of tiny dev/design tools.</h1>
+          </Link>
+          <nav className="flex flex-col gap-2 text-sm text-slate-200 md:items-end">
+            <div className="flex max-w-full gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
+              {primaryNav.map((tool) => (
+                <NavLink
+                  key={tool.to}
+                  to={tool.to}
+                  className={({ isActive }) =>
+                    `whitespace-nowrap rounded-full border border-white/10 px-4 py-1 transition ${
+                      isActive ? "bg-white/15 text-white" : "bg-white/5 text-slate-200 hover:bg-white/10"
+                    }`
                   }
                 >
-                  Toggle All
-        </button>
-              </div>
-              <ul className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto pr-1 text-xs text-slate-600 dark:text-slate-200 sm:text-sm">
-                {presetEntries.map(([key, value]) => {
-                  const checked = selected[key];
-                  return (
-                    <li
-                      key={key}
-                      className={`flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3 transition dark:border-white/10 ${
-                        checked
-                          ? "bg-gradient-to-r from-cyan-200/25 via-blue-200/25 to-purple-200/25 shadow-lg shadow-cyan-200/40 dark:from-cyan-500/25 dark:via-blue-500/25 dark:to-purple-500/25 dark:shadow-cyan-900/20"
-                          : "bg-slate-100 dark:bg-slate-900/60"
-                      }`}
+                  {tool.label}
+                </NavLink>
+              ))}
+              {secondaryNav.length > 0 && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setMoreOpen((prev) => !prev)}
+                    className={`rounded-full border border-white/10 px-4 py-1 uppercase tracking-[0.35em] transition ${
+                      moreOpen ? "bg-white/20 text-white" : "bg-white/5 text-slate-200 hover:bg-white/10"
+                    }`}
+                    aria-haspopup="true"
+                    aria-expanded={moreOpen}
+                  >
+                    More
+                  </button>
+                  {moreOpen && (
+                    <div
+                      className="absolute right-0 z-20 mt-2 w-60 rounded-2xl border border-white/10 bg-slate-900/95 p-3 shadow-xl shadow-cyan-900/30"
+                      onMouseLeave={() => setMoreOpen(false)}
                     >
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium capitalize text-slate-900 dark:text-white">
-                          {value.label}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-300">
-                          {value.tasks.length} asset{value.tasks.length > 1 ? "s" : ""}
-                        </p>
+                      <p className="px-2 pb-2 text-[10px] uppercase tracking-[0.35em] text-cyan-200/70">Tools</p>
+                      <div className="grid gap-1">
+                        {secondaryNav.map((tool) => (
+                          <NavLink
+                            key={tool.to}
+                            to={tool.to}
+                            onClick={() => setMoreOpen(false)}
+                            className={({ isActive }) =>
+                              `rounded-xl px-3 py-2 text-sm transition ${
+                                isActive ? "bg-white/15 text-white" : "text-slate-200 hover:bg-white/10"
+                              }`
+                            }
+                          >
+                            {tool.label}
+                          </NavLink>
+                        ))}
                       </div>
-                      <label className="relative inline-flex cursor-pointer items-center">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) =>
-                            setSelected((s) => ({ ...s, [key]: e.target.checked }))
-                          }
-                          className="peer sr-only"
-                        />
-                        <span className="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-gradient-to-r peer-checked:from-cyan-400 peer-checked:to-purple-400 dark:bg-slate-700/80" />
-                        <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5" />
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </nav>
+        </header>
 
-            <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-cyan-400/80 via-blue-400/80 to-purple-500/80 p-5 text-white shadow-2xl shadow-purple-300/40 dark:border-white/10 dark:from-cyan-500/80 dark:via-blue-500/80 dark:to-purple-600/80 dark:shadow-purple-900/40">
-              <h2 className="text-lg font-semibold">Export bundle</h2>
-              <p className="mt-1 text-xs text-white/80">
-                Generates zipped folders with manifests, adaptive icons, Apple Contents.json, and Windows ICOs.
-              </p>
-              <button
-                disabled={!ready || busy}
-                onClick={buildZip}
-                className="mt-4 flex w-full items-center justify-center rounded-full bg-white/20 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg shadow-cyan-200/40 transition hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/10 dark:shadow-cyan-900/30 dark:hover:bg-white/20"
-              >
-                {busy ? "Generating…" : "Download ZIP"}
-              </button>
-              <ul className="mt-4 space-y-1.5 text-[11px] text-white/80">
-                <li>• Transparent-safe PNG resizing in-browser.</li>
-                <li>• Keeps intermediate PNGs alongside ICOs for QA.</li>
-                <li>• No upload necessary — privacy by design.</li>
-              </ul>
-            </section>
-          </aside>
-        </div>
+        <main className="mt-8 flex-1">
+          <Outlet />
+        </main>
+
+        <footer className="mt-8 flex flex-col gap-2 text-xs text-slate-400">
+          <p>Crafted with React, Vite, Tailwind, and a love for delightful utilities.</p>
+          <p className="text-slate-500">More tools coming soon — contributions welcome!</p>
+        </footer>
       </div>
     </div>
   );
 }
 
-function Preview({
-  img,
-  size,
-  padPct,
-  shapeOverlay,
-}: {
-  img: HTMLImageElement;
-  size: number;
-  padPct: number;
-  shapeOverlay: string | null;
-}) {
-  const dataUrl = useMemo(() => {
-    const canvas = renderToCanvas(img, size, padPct);
-    return canvas.toDataURL("image/png");
-  }, [img, size, padPct]);
-
-  if (!dataUrl) return null;
+function HomePage() {
+  const categories = useMemo(() => {
+    const map = new Map<string, DashboardCard[]>();
+    dashboardCards.forEach((card) => {
+      const list = map.get(card.category) ?? [];
+      list.push(card);
+      map.set(card.category, list);
+    });
+    return Array.from(map.entries());
+  }, []);
 
   return (
-    <div className="relative flex items-center justify-center">
-      <img
-        src={dataUrl}
-        width={size}
-        height={size}
-        className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
-        alt="Preview"
-      />
-      {shapeOverlay && (
-        <div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-          aria-hidden="true"
-        >
-          <div
-            className="h-full w-full border-2 border-cyan-200/70 bg-cyan-200/5 backdrop-blur-[1px]"
-            style={{ borderRadius: overlayShapes.find((s) => s.id === shapeOverlay)?.borderRadius ?? "0" }}
-          />
-        </div>
-      )}
+    <div className="space-y-10 text-slate-200">
+      {categories.map(([category, cards]) => (
+        <section key={category}>
+          <header className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold uppercase tracking-[0.4em] text-cyan-200/80">{category}</h2>
+            <span className="text-xs text-slate-400">{cards.length} tool{cards.length === 1 ? "" : "s"}</span>
+          </header>
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {cards.map((card) => (
+              <Link
+                key={card.title}
+                to={card.href}
+                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-cyan-900/20 transition hover:-translate-y-1 hover:shadow-2xl"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/15 via-transparent to-purple-600/20 opacity-0 transition group-hover:opacity-100" />
+                <div className="relative z-10 space-y-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-cyan-100" dangerouslySetInnerHTML={{ __html: card.badge }} />
+                  <h3 className="text-xl font-semibold text-white">{card.title}</h3>
+                  <p className="text-sm text-slate-200/80">{card.description}</p>
+                  <p className="text-xs uppercase tracking-[0.4em] text-cyan-200/70">{card.cta}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ))}
+      </div>
+  );
+}
+
+function ComingSoonPage({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-slate-200 shadow-2xl shadow-cyan-900/20">
+      <span className="rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.3em] text-cyan-200">In development</span>
+      <h2 className="text-3xl font-semibold text-white">{title}</h2>
+      <p className="max-w-md text-sm text-slate-300">{description}</p>
+      <p className="text-xs uppercase tracking-[0.4em] text-cyan-200/70">Stay tuned</p>
     </div>
   );
 }

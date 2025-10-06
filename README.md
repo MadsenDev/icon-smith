@@ -4,11 +4,36 @@ IconSmith is a browser-native icon foundry. Drop in an SVG or high-res PNG and i
 
 ## ✨ Highlights
 
-- **Pure client-side pipeline** — Resizing, padding, ICO creation, and zipping all happen in the browser via canvas APIs.
-- **Comprehensive presets** — Ships with curated task lists for Web (PWA + favicon), Android (adaptive, foreground, monochrome), iOS (AppIcon + `Contents.json`), Windows (`app.ico`), and Linux/Desktop PNGs.
-- **Smart quality hints** — Automatically analyses resolution, aspect ratio, transparency coverage, padding, and source type to surface actionable advice.
-- **Live shape overlays** — Preview the artwork against circle, rounded, squircle, or raw canvases to emulate maskable footprints before exporting.
-- **Adaptive UI** — Luxury gradient theme, instant drag-and-drop, and real-time padding slider with preview feedback.
+- **Browser-native suite** — Everything runs client-side with React, Vite, Tailwind; no uploads or servers required.
+- **Multi-tool dashboard** — Jump between IconSmith, PaletteSmith, FaviconSmith, OGSmith, RenameSmith, ContrastSmith, SpriteSmith, AssetSmith, TokenSmith, MetaSmith, GradientSmith, MarkdownSmith, LocaleSmith, and MockupSmith.
+- **Consistent UX** — Unified dark UI, responsive layout, dropdown navigation, and rich previews across tools.
+- **Share-ready exports** — Download PNGs, sprites, metadata snippets, OG images, markdown HTML, locale merges, and more.
+- **Smart helpers** — Quality hints, palette analysis, renaming rules, diff reports, and color-coded categories.
+
+## 🧰 Available Tools
+
+| Tool | Summary |
+| --- | --- |
+| IconSmith | Generate platform-specific icon bundles (Android/iOS/Web/Windows/Desktop) + quality hints |
+| PaletteSmith | Extract color palettes, output Tailwind config, CSS variables, JSON |
+| FaviconSmith | Create multi-size favicons, ICO files, and site.webmanifest |
+| OGSmith | Compose Open Graph images with templates, assets, aspect ratios |
+| RenameSmith | Batch rename files with casing rules, find/replace, numbering |
+| ContrastSmith | Audit colour pairs for WCAG AA/AAA compliance and suggested adjustments |
+| SpriteSmith | Build spritesheets with CSS/JSON metadata exports |
+| AssetSmith | Compress images in-browser with quality/dimension controls |
+| TokenSmith | Convert design tokens between JSON, CSS variables, Tailwind, Style Dictionary |
+| MetaSmith | Generate `<head>` metadata snippets (OG, Twitter, theme color) |
+| GradientSmith | Craft multi-stop gradients, see previews, export CSS/Tailwind/SVG |
+| MarkdownSmith | Live Markdown → HTML previewer with frontmatter display |
+| LocaleSmith | Diff/merge localisation JSON, highlight missing/extra keys |
+| MockupSmith | Drop assets into browser/device frames and export PNG mockups |
+| ShapeSmith | Generate hero blobs, divider waves, stars, and grid patterns with exportable SVG/React |
+| ShadowSmith | Craft multi-layer shadows, glassmorphism panels, and neon glows |
+| NoiseSmith | Generate subtle grain, dust, and scan-line overlays with exports |
+| RegexSmith | Test patterns, capture groups, replacements, and explanations |
+| DiffSmith | View split/unified diffs for text or JSON with change summaries |
+| DataSmith | Generate fake datasets with seeds, presets, and JSON/CSV exports |
 
 ## 🚀 Quick Start
 

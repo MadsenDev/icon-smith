@@ -82,6 +82,7 @@ export function renderToCanvas(
   src: HTMLImageElement,
   size: number,
   padPct = 0,
+  background: string | "transparent" = "transparent",
 ): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = c.height = size;
@@ -89,7 +90,13 @@ export function renderToCanvas(
   if (!ctx) {
     throw new Error("Unable to get 2D context");
   }
-  ctx.clearRect(0, 0, size, size);
+
+  if (background !== "transparent") {
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, size, size);
+  } else {
+    ctx.clearRect(0, 0, size, size);
+  }
 
   const intrinsicWidth = (() => {
     const datasetWidth = Number.parseFloat(src.dataset?.intrinsicWidth ?? "");
