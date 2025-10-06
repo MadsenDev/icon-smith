@@ -39,6 +39,7 @@ Smith Suite is a collection of browser-native design and development tools. Each
 | RegexSmith | Test patterns, capture groups, replacements, and explanations |
 | DiffSmith | View split/unified diffs for text or JSON with change summaries |
 | DataSmith | Generate fake datasets with seeds, presets, and JSON/CSV exports |
+| SchemaSmith | Design MySQL schemas visually and export production-ready SQL |
 
 ## 🚀 Quick Start
 
@@ -54,7 +55,8 @@ Open the Vite URL (defaults to http://localhost:5173) and explore the dashboard.
 - **Design & Visuals** — IconSmith, PaletteSmith, ShapeSmith, GradientSmith, ShadowSmith, NoiseSmith, MockupSmith, AnimationSmith, TypographySmith, LayoutSmith
 - **Assets & Metadata** — FaviconSmith, AssetSmith, SpriteSmith, MetaSmith
 - **Content & Docs** — OGSmith, MarkdownSmith, LocaleSmith
-- **Productivity** — RenameSmith, TokenSmith, DiffSmith, DataSmith, RegexSmith, VersionSmith
+- **Productivity** — RenameSmith, TokenSmith, VersionSmith
+- **Utilities** — DiffSmith, DataSmith, SchemaSmith, RegexSmith
 - **Accessibility** — ContrastSmith, AuditSmith
 
 ## 🔍 Under the Hood
