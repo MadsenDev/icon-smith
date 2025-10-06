@@ -12,6 +12,7 @@ import NoiseSmithPage from "./pages/NoiseSmith";
 import RegexSmithPage from "./pages/RegexSmith";
 import DiffSmithPage from "./pages/DiffSmith";
 import DataSmithPage from "./pages/DataSmith";
+import SchemaSmithPage from "./pages/SchemaSmith";
 import SpriteSmithPage from "./pages/SpriteSmith";
 import AssetSmithPage from "./pages/AssetSmith";
 import TokenSmithPage from "./pages/TokenSmith";
@@ -141,6 +142,14 @@ const dashboardCards: DashboardCard[] = [
     category: "Utilities",
   },
   {
+    title: "SchemaSmith",
+    description: "Design MySQL schemas with tables and columns, then export CREATE statements.",
+    badge: "<span role='img' aria-hidden='true'>🗄️</span> Ready",
+    cta: "Launch tool",
+    href: "/schema-smith",
+    category: "Utilities",
+  },
+  {
     title: "SpriteSmith",
     description: "Combine icons into spritesheets with CSS/JSON metadata exports.",
     badge: "<span role='img' aria-hidden='true'>🧩</span> Ready",
@@ -258,6 +267,7 @@ const router = createBrowserRouter([
       { path: "regex-smith", element: <RegexSmithPage /> },
       { path: "diff-smith", element: <DiffSmithPage /> },
       { path: "data-smith", element: <DataSmithPage /> },
+      { path: "schema-smith", element: <SchemaSmithPage /> },
       { path: "sprite-smith", element: <SpriteSmithPage /> },
       { path: "asset-smith", element: <AssetSmithPage /> },
       { path: "token-smith", element: <TokenSmithPage /> },
