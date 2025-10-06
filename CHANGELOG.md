@@ -32,6 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - IconSmith quality hints, shape overlays, and browser-only pipeline
 - Navigation supports dropdown for secondary tools and responsive layout
 - Dashboard cards grouped by category with tool counts
+- Tool metadata extracted to `src/data/tools.ts` and shared across the dashboard
+- Added search with tag-aware filtering on the launch dashboard for quicker discovery
 
 ### Fixed
 - Prevented TokenSmith parsing from triggering re-render loops

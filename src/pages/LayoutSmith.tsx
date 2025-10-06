@@ -1,6 +1,8 @@
 import { useMemo, useState, type CSSProperties } from "react";
+import { gridTemplatePresets, parseTemplateInput } from "../utils/layout";
+import { GridTemplatePreview } from "../components/GridTemplatePreview";
 
-type Mode = "grid" | "flex";
+type Mode = "grid" | "flex" | "visual-grid";
 
 type PreviewSettings = {
   mode: Mode;
@@ -12,6 +14,8 @@ type PreviewSettings = {
   flexWrap: "nowrap" | "wrap";
   justify: "flex-start" | "center" | "space-between" | "space-around" | "space-evenly" | "flex-end";
   align: "stretch" | "flex-start" | "center" | "flex-end";
+  templateColumns: string;
+  templateRows: string;
 };
 
 const defaultSettings: PreviewSettings = {
@@ -24,6 +28,8 @@ const defaultSettings: PreviewSettings = {
   flexWrap: "wrap",
   justify: "flex-start",
   align: "stretch",
+  templateColumns: "repeat(3, minmax(0, 1fr))",
+  templateRows: "",
 };
 
 const cellPalette = [
@@ -40,14 +46,32 @@ export default function LayoutSmithPage() {
   const [containerWidth, setContainerWidth] = useState(960);
   const [containerHeight, setContainerHeight] = useState(520);
 
-  const boxCount = useMemo(() => (settings.mode === "grid" ? settings.columns * settings.rows : 6), [settings]);
+  const boxCount = useMemo(() => {
+    if (settings.mode === "grid") {
+      return settings.columns * settings.rows;
+    }
+    if (settings.mode === "visual-grid") {
+      const columns = settings.templateColumns.split(" ").length || settings.columns;
+      return Math.max(6, columns * 3);
+    }
+    return 6;
+  }, [settings]);
 
   const gridCss = useMemo(() => {
-    if (settings.mode !== "grid") return "";
-    const templateColumns = `grid-template-columns: repeat(${settings.columns}, minmax(0, 1fr));`;
-    const templateRows = `grid-auto-rows: minmax(${settings.minRowHeight}px, auto);`;
+    if (settings.mode === "grid") {
+      const templateColumns = `grid-template-columns: repeat(${settings.columns}, minmax(0, 1fr));`;
+      const templateRows = `grid-auto-rows: minmax(${settings.minRowHeight}px, auto);`;
+      const gap = `gap: ${settings.gap}px;`;
+      return `display: grid;\n${templateColumns}\n${templateRows}\n${gap}`;
+    }
+    if (settings.mode === "visual-grid") {
+      const columns = `grid-template-columns: ${settings.templateColumns};`;
+      const rows = settings.templateRows ? `grid-template-rows: ${settings.templateRows};` : "";
+      const gap = `gap: ${settings.gap}px;`;
+      return `display: grid;\n${columns}\n${rows ? `${rows}\n` : ""}${gap}`.trim();
+    }
     const gap = `gap: ${settings.gap}px;`;
-    return `display: grid;\n${templateColumns}\n${templateRows}\n${gap}`;
+    return gap;
   }, [settings]);
 
   const flexCss = useMemo(() => {
@@ -71,6 +95,15 @@ export default function LayoutSmithPage() {
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
       }
+    : settings.mode === "visual-grid"
+    ? {
+        display: "grid",
+        gridTemplateColumns: settings.templateColumns,
+        gridTemplateRows: settings.templateRows || undefined,
+        gap: `${settings.gap}px`,
+        width: `${containerWidth}px`,
+        height: `${containerHeight}px`,
+      }
     : {
         display: "flex",
         flexDirection: settings.flexDirection,
@@ -83,7 +116,8 @@ export default function LayoutSmithPage() {
       };
 
   const responsiveSnippet = useMemo(() => {
-    const base = [`.layout {`, `  ${cssExport.split("\n").join("\n  ")}`, `}`];
+  const cssLines = cssExport.split("\n").filter(Boolean);
+  const base = [`.layout {`, ...cssLines.map((line) => `  ${line}`), `}`];
     const mdColumns = Math.max(1, settings.columns - 1);
     const mobileColumns = Math.max(1, settings.columns - 2);
 
@@ -95,6 +129,16 @@ export default function LayoutSmithPage() {
         "}",
         "@media (max-width: 640px) {",
         `  .layout { grid-template-columns: repeat(${mobileColumns}, minmax(0, 1fr)); }`,
+        "}",
+      );
+    } else if (settings.mode === "visual-grid") {
+      base.push(
+        "",
+        "@media (max-width: 1024px) {",
+        "  .layout { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }",
+        "}",
+        "@media (max-width: 640px) {",
+        "  .layout { grid-template-columns: minmax(0, 1fr); }",
         "}",
       );
     } else {
@@ -121,28 +165,24 @@ export default function LayoutSmithPage() {
             <h2 className="text-xl font-semibold text-white">Prototype responsive wrappers</h2>
           </header>
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setSettings((prev) => ({ ...prev, mode: "grid" }))}
-              className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.35em] transition ${
-                settings.mode === "grid"
-                  ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100"
-                  : "border-white/10 bg-white/10 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-100"
-              }`}
-            >
-              Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => setSettings((prev) => ({ ...prev, mode: "flex" }))}
-              className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.35em] transition ${
-                settings.mode === "flex"
-                  ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100"
-                  : "border-white/10 bg-white/10 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-100"
-              }`}
-            >
-              Flex
-            </button>
+            {[
+              { key: "grid", label: "Grid" },
+              { key: "visual-grid", label: "Template" },
+              { key: "flex", label: "Flex" },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setSettings((prev) => ({ ...prev, mode: option.key as Mode }))}
+                className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.35em] transition ${
+                  settings.mode === option.key
+                    ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-100"
+                    : "border-white/10 bg-white/10 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-100"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
 
           {settings.mode === "grid" ? (
@@ -191,6 +231,54 @@ export default function LayoutSmithPage() {
                   className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/60"
                 />
               </label>
+            </div>
+          ) : settings.mode === "visual-grid" ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-xs uppercase tracking-[0.3em] text-cyan-200/70">Columns template</span>
+                  <input
+                    value={settings.templateColumns}
+                    onChange={(event) =>
+                      setSettings((prev) => ({ ...prev, templateColumns: parseTemplateInput(event.target.value) }))
+                    }
+                    className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/60"
+                    placeholder="repeat(auto-fit, minmax(220px, 1fr))"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-xs uppercase tracking-[0.3em] text-cyan-200/70">Rows template (optional)</span>
+                  <input
+                    value={settings.templateRows}
+                    onChange={(event) =>
+                      setSettings((prev) => ({ ...prev, templateRows: event.target.value.trim() }))
+                    }
+                    className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/60"
+                    placeholder="auto auto 1fr"
+                  />
+                </label>
+              </div>
+              <GridTemplatePreview columns={settings.templateColumns} rows={settings.templateRows} />
+              <div className="grid gap-3 md:grid-cols-2">
+                {gridTemplatePresets.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        templateColumns: preset.columns,
+                        templateRows: preset.rows ?? "",
+                      }))
+                    }
+                    className="rounded-2xl border border-white/10 bg-black/30 p-4 text-left text-xs text-slate-200 transition hover:border-cyan-400/40 hover:text-cyan-100"
+                  >
+                    <span className="block text-[10px] uppercase tracking-[0.3em] text-cyan-200/70">{preset.name}</span>
+                    <span className="mt-2 block text-slate-300">{preset.description}</span>
+                    <code className="mt-3 block text-[11px] text-cyan-100">{preset.columns}</code>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -314,6 +402,12 @@ export default function LayoutSmithPage() {
               </div>
             </div>
             <p className="mt-4 text-center text-[11px] uppercase tracking-[0.35em] text-slate-500">{settings.mode} layout preview</p>
+            {settings.mode === "visual-grid" && (
+              <p className="mt-2 text-center text-[10px] text-slate-400">
+                Tip: try values like <span className="px-1 text-cyan-100">200px 1fr</span>, <span className="px-1 text-cyan-100">repeat(3, 1fr)</span>,
+                or <span className="px-1 text-cyan-100">repeat(auto-fit, minmax(220px, 1fr))</span> to explore responsive structures.
+              </p>
+            )}
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-cyan-900/20">
             <header className="space-y-1">
