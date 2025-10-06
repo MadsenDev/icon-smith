@@ -302,7 +302,7 @@ function RootLayout() {
     <div className="min-h-screen bg-slate-950 text-slate-50">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-500/30 via-transparent to-transparent blur-3xl" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-purple-600/30 via-transparent to-transparent blur-3xl" />
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-6 pb-12 pt-10 md:px-12">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col px-4 pb-12 pt-10 sm:px-8 lg:px-12 xl:px-16">
         <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <Link to="/" className="inline-flex items-center gap-3">
             <span className="rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.3em] text-cyan-200/90 ring-1 ring-white/20">Smith Suite</span>
