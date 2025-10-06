@@ -15,17 +15,20 @@ const previewThemes = {
   dark: {
     label: "Dark",
     wrapper: "rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-purple-900/20 backdrop-blur text-white",
-    article: "prose prose-invert mt-4 max-w-none",
+    article:
+      "prose prose-invert mt-4 max-w-none prose-headings:font-semibold prose-headings:tracking-tight prose-p:leading-relaxed prose-a:text-cyan-300 prose-strong:text-white",
   },
   light: {
     label: "Light",
     wrapper: "rounded-3xl border border-slate-200/70 bg-white/95 p-6 text-slate-900 shadow-2xl shadow-slate-900/10",
-    article: "prose mt-4 max-w-none text-slate-900",
+    article:
+      "prose mt-4 max-w-none text-slate-900 prose-headings:text-slate-900 prose-headings:font-semibold prose-headings:tracking-tight prose-p:leading-relaxed prose-a:text-cyan-700",
   },
   serif: {
     label: "Serif",
     wrapper: "rounded-3xl border border-amber-200/60 bg-amber-50/90 p-6 text-slate-900 shadow-2xl shadow-amber-900/10",
-    article: "prose prose-lg mt-4 max-w-none text-slate-900 font-serif prose-headings:font-serif",
+    article:
+      "prose prose-lg mt-4 max-w-none text-slate-900 font-serif prose-headings:font-serif prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-amber-700",
   },
 } as const;
 
@@ -53,10 +56,12 @@ export default function MarkdownSmithPage() {
   const strippedMarkdown = useMemo(() => stripFrontmatter(markdown), [markdown]);
   const html = useMemo(() => {
     const renderer = new marked.Renderer();
-    const slugger = new marked.Slugger();
-    renderer.heading = (text, level, raw) => {
-      const slug = slugger.slug(raw ?? text);
-      return `<h${level} id="${slug}">${text}</h${level}>`;
+    const textRenderer = new marked.TextRenderer();
+    renderer.heading = (token) => {
+      const inline = renderer.parser.parseInline(token.tokens);
+      const plain = renderer.parser.parseInline(token.tokens, textRenderer);
+      const slug = slugify(typeof plain === "string" ? plain : String(plain));
+      return `<h${token.depth} id="${slug}">${inline}</h${token.depth}>`;
     };
     return marked.parse(strippedMarkdown, { breaks: true, renderer });
   }, [strippedMarkdown]);
@@ -78,13 +83,12 @@ export default function MarkdownSmithPage() {
 
   const headings = useMemo<TocHeading[]>(() => {
     const regex = /^(\#{1,6})\s+(.+)$/gm;
-    const slugger = new marked.Slugger();
     const collected: TocHeading[] = [];
     let match: RegExpExecArray | null;
     while ((match = regex.exec(strippedMarkdown)) !== null) {
       const level = match[1].length;
       const text = match[2].trim();
-      const slug = slugger.slug(text);
+      const slug = slugify(text);
       collected.push({ level, text, slug });
     }
     return collected;
