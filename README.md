@@ -23,11 +23,16 @@ Smith Suite is a collection of browser-native design and development tools. Each
 | SpriteSmith | Build spritesheets with CSS/JSON metadata exports |
 | AssetSmith | Compress images in-browser with quality/dimension controls |
 | TokenSmith | Convert design tokens between JSON, CSS variables, Tailwind, Style Dictionary |
+| AnimationSmith | Compose keyframe-based animations, preview easing curves, and export CSS/JSON timelines |
 | MetaSmith | Generate `<head>` metadata snippets (OG, Twitter, theme colour) |
 | GradientSmith | Craft multi-stop gradients, see previews, export CSS/Tailwind/SVG |
 | MarkdownSmith | Live Markdown → HTML previewer with frontmatter display |
 | LocaleSmith | Diff/merge localisation JSON, highlight missing/extra keys |
 | MockupSmith | Drop assets into browser/device frames and export PNG mockups |
+| TypographySmith | Explore font pairings, scale systems, and responsive type tokens with instant exports |
+| LayoutSmith | Prototype responsive grid/flex layouts, generate CSS snippets, and visualise breakpoints |
+| AuditSmith | Run automated accessibility heuristics, generate issue reports, and surface remediation tips |
+| VersionSmith | Compare and merge design tokens, locale files, or datasets across git commits and branches |
 | ShapeSmith | Generate hero blobs, divider waves, stars, and grid patterns with exportable SVG/React |
 | ShadowSmith | Craft multi-layer shadows, glassmorphism panels, and neon glows |
 | NoiseSmith | Generate subtle grain, dust, and scan-line overlays with exports |
@@ -46,11 +51,11 @@ Open the Vite URL (defaults to http://localhost:5173) and explore the dashboard.
 
 ## 🧩 Tool Categories
 
-- **Design & Visuals** — IconSmith, PaletteSmith, ShapeSmith, GradientSmith, ShadowSmith, NoiseSmith, MockupSmith
+- **Design & Visuals** — IconSmith, PaletteSmith, ShapeSmith, GradientSmith, ShadowSmith, NoiseSmith, MockupSmith, AnimationSmith, TypographySmith, LayoutSmith
 - **Assets & Metadata** — FaviconSmith, AssetSmith, SpriteSmith, MetaSmith
 - **Content & Docs** — OGSmith, MarkdownSmith, LocaleSmith
-- **Productivity** — RenameSmith, TokenSmith, DiffSmith, DataSmith, RegexSmith
-- **Accessibility** — ContrastSmith
+- **Productivity** — RenameSmith, TokenSmith, DiffSmith, DataSmith, RegexSmith, VersionSmith
+- **Accessibility** — ContrastSmith, AuditSmith
 
 ## 🔍 Under the Hood
 
@@ -66,6 +71,10 @@ Open the Vite URL (defaults to http://localhost:5173) and explore the dashboard.
 - Clipboard paste, URL importing, and drag-drop everywhere
 - Additional export pipelines (macOS `.icns`, token formats, Storybook docs)
 - Collaboration features for sharing config snapshots
+
+## 💡 Future Tool Suggestions
+
+Have an idea for the next Smith? Open an issue or PR—the roadmap is community driven and always evolving.
 
 ## 🤝 Contributing
 

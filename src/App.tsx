@@ -20,6 +20,11 @@ import GradientSmithPage from "./pages/GradientSmith";
 import MarkdownSmithPage from "./pages/MarkdownSmith";
 import LocaleSmithPage from "./pages/LocaleSmith";
 import MockupSmithPage from "./pages/MockupSmith";
+import AnimationSmithPage from "./pages/AnimationSmith";
+import TypographySmithPage from "./pages/TypographySmith";
+import LayoutSmithPage from "./pages/LayoutSmith";
+import AuditSmithPage from "./pages/AuditSmith";
+import VersionSmithPage from "./pages/VersionSmith";
 
 type DashboardCard = {
   title: string;
@@ -88,6 +93,14 @@ const dashboardCards: DashboardCard[] = [
     category: "Design",
   },
   {
+    title: "AnimationSmith",
+    description: "Compose keyframes, tweak easing, and export CSS/JSON timelines.",
+    badge: "<span role='img' aria-hidden='true'>🎞️</span> Ready",
+    cta: "Launch tool",
+    href: "/animation-smith",
+    category: "Design",
+  },
+  {
     title: "ShadowSmith",
     description: "Craft multi-layer shadows, glassmorphism, and neon glows with exportable CSS.",
     badge: "<span role='img' aria-hidden='true'>🌌</span> Ready",
@@ -152,6 +165,14 @@ const dashboardCards: DashboardCard[] = [
     category: "Design",
   },
   {
+    title: "TypographySmith",
+    description: "Explore font pairings and fluid scales with instant CSS exports.",
+    badge: "<span role='img' aria-hidden='true'>🅰️</span> Ready",
+    cta: "Launch tool",
+    href: "/typography-smith",
+    category: "Design",
+  },
+  {
     title: "MetaSmith",
     description: "Build and validate head metadata: favicons, OG/Twitter tags, manifests.",
     badge: "<span role='img' aria-hidden='true'>🧭</span> Ready",
@@ -184,12 +205,36 @@ const dashboardCards: DashboardCard[] = [
     category: "Productivity",
   },
   {
+    title: "VersionSmith",
+    description: "Compare JSON snapshots, highlight drift, and deep merge token sets.",
+    badge: "<span role='img' aria-hidden='true'>🗂️</span> Ready",
+    cta: "Launch tool",
+    href: "/version-smith",
+    category: "Productivity",
+  },
+  {
     title: "MockupSmith",
     description: "Place assets into device/browser mockups for presentations and OG images.",
     badge: "<span role='img' aria-hidden='true'>📱</span> Ready",
     cta: "Launch tool",
     href: "/mockup-smith",
     category: "Design",
+  },
+  {
+    title: "LayoutSmith",
+    description: "Prototype grid and flex wrappers with responsive CSS snippets.",
+    badge: "<span role='img' aria-hidden='true'>🧱</span> Ready",
+    cta: "Launch tool",
+    href: "/layout-smith",
+    category: "Design",
+  },
+  {
+    title: "AuditSmith",
+    description: "Run accessibility heuristics and colour contrast checks in one view.",
+    badge: "<span role='img' aria-hidden='true'>♿</span> Ready",
+    cta: "Launch tool",
+    href: "/audit-smith",
+    category: "Accessibility",
   },
 ];
 
@@ -221,6 +266,11 @@ const router = createBrowserRouter([
       { path: "markdown-smith", element: <MarkdownSmithPage /> },
       { path: "locale-smith", element: <LocaleSmithPage /> },
       { path: "mockup-smith", element: <MockupSmithPage /> },
+      { path: "animation-smith", element: <AnimationSmithPage /> },
+      { path: "typography-smith", element: <TypographySmithPage /> },
+      { path: "layout-smith", element: <LayoutSmithPage /> },
+      { path: "audit-smith", element: <AuditSmithPage /> },
+      { path: "version-smith", element: <VersionSmithPage /> },
     ],
   },
 ]);
