@@ -1,29 +1,29 @@
-# IconSmith
+# Smith Suite
 
-IconSmith is a browser-native icon foundry. Drop in an SVG or high-res PNG and instantly generate production-ready asset bundles for Web, Android, iOS, Windows, and desktop. Everything runs client-side—no uploads, no privacy headaches.
+Smith Suite is a collection of browser-native design and development tools. Each app runs fully client-side with React, Vite, and Tailwind—no servers, no uploads, just rapid iteration in your browser. The suite continues to grow, spanning colour, imagery, metadata, accessibility, content, and developer productivity workflows.
 
 ## ✨ Highlights
 
-- **Browser-native suite** — Everything runs client-side with React, Vite, Tailwind; no uploads or servers required.
-- **Multi-tool dashboard** — Jump between IconSmith, PaletteSmith, FaviconSmith, OGSmith, RenameSmith, ContrastSmith, SpriteSmith, AssetSmith, TokenSmith, MetaSmith, GradientSmith, MarkdownSmith, LocaleSmith, and MockupSmith.
-- **Consistent UX** — Unified dark UI, responsive layout, dropdown navigation, and rich previews across tools.
-- **Share-ready exports** — Download PNGs, sprites, metadata snippets, OG images, markdown HTML, locale merges, and more.
-- **Smart helpers** — Quality hints, palette analysis, renaming rules, diff reports, and color-coded categories.
+- **Browser-native suite** — All tooling runs client-side; React + Vite + Tailwind power the entire experience.
+- **Launchpad dashboard** — Category-sorted cards and quick nav keep 20+ tools discoverable as the suite grows.
+- **Consistent UX** — Shared visual language, responsive layouts, and cohesive interaction patterns across every Smith.
+- **Export everything** — Grab PNGs, sprites, metadata snippets, OG images, markdown HTML, locale merges, diffs, datasets, and more.
+- **Helpful guidance** — Intelligent hints for colour contrast, tokens, regex flags, dataset configs, and icon quality.
 
-## 🧰 Available Tools
+## 🧰 Tools at a Glance
 
 | Tool | Summary |
 | --- | --- |
 | IconSmith | Generate platform-specific icon bundles (Android/iOS/Web/Windows/Desktop) + quality hints |
-| PaletteSmith | Extract color palettes, output Tailwind config, CSS variables, JSON |
-| FaviconSmith | Create multi-size favicons, ICO files, and site.webmanifest |
+| PaletteSmith | Extract colour palettes, output Tailwind config, CSS variables, JSON |
+| FaviconSmith | Create multi-size favicons, ICO files, and `site.webmanifest` |
 | OGSmith | Compose Open Graph images with templates, assets, aspect ratios |
 | RenameSmith | Batch rename files with casing rules, find/replace, numbering |
 | ContrastSmith | Audit colour pairs for WCAG AA/AAA compliance and suggested adjustments |
 | SpriteSmith | Build spritesheets with CSS/JSON metadata exports |
 | AssetSmith | Compress images in-browser with quality/dimension controls |
 | TokenSmith | Convert design tokens between JSON, CSS variables, Tailwind, Style Dictionary |
-| MetaSmith | Generate `<head>` metadata snippets (OG, Twitter, theme color) |
+| MetaSmith | Generate `<head>` metadata snippets (OG, Twitter, theme colour) |
 | GradientSmith | Craft multi-stop gradients, see previews, export CSS/Tailwind/SVG |
 | MarkdownSmith | Live Markdown → HTML previewer with frontmatter display |
 | LocaleSmith | Diff/merge localisation JSON, highlight missing/extra keys |
@@ -42,73 +42,34 @@ npm install
 npm run dev
 ```
 
-Then open the Vite dev server link (usually http://localhost:5173) and drag in an SVG/PNG.
+Open the Vite URL (defaults to http://localhost:5173) and explore the dashboard. Every tool works offline once loaded.
 
-## 🛠️ How It Works
+## 🧩 Tool Categories
 
-1. **Ingest**
-   - Accepts SVG or bitmap inputs via file picker, drag-&-drop, or clipboard (upcoming).
-   - Parses dimensions and transparency to compute baseline quality hints.
-2. **Render**
-   - Resizes the artwork into each preset task using `renderToCanvas` with optional global padding.
-   - Generates monochrome variants for Android adaptive icons in-browser.
-3. **Package**
-   - Builds PNGs, multi-size `favicon.ico`, and `windows/app.ico` without server-side helpers.
-   - Bundles extras like Android XML and iOS `Contents.json` in a single ZIP via JSZip + FileSaver.
+- **Design & Visuals** — IconSmith, PaletteSmith, ShapeSmith, GradientSmith, ShadowSmith, NoiseSmith, MockupSmith
+- **Assets & Metadata** — FaviconSmith, AssetSmith, SpriteSmith, MetaSmith
+- **Content & Docs** — OGSmith, MarkdownSmith, LocaleSmith
+- **Productivity** — RenameSmith, TokenSmith, DiffSmith, DataSmith, RegexSmith
+- **Accessibility** — ContrastSmith
 
-## 🧪 Quality Hints
+## 🔍 Under the Hood
 
-- ⚠️ **Resolution warning** when the source is smaller than the largest requested size.
-- ✅ **Positive** flag for ample resolution or SVG vector inputs.
-- ℹ️ **Aspect ratio and transparency tips** to ensure icons feel centred and maskable.
-- Padding feedback reacts live as you adjust the slider.
-
-## 🖼️ Shape Overlays
-
-Use the preview toggles to emulate:
-
-- Circle — Android adaptive / maskable icons.
-- Rounded square — Windows / desktop launchers.
-- Squircle — iOS home screen appearance.
-- None — shows the raw canvas.
-
-## 📦 Output Structure
-
-```
-icon-name-icons.zip
-├─ web/
-│  ├─ icon-192.png
-│  ├─ icon-512.png
-│  ├─ apple-touch-icon.png
-│  ├─ favicon.ico
-│  └─ manifest-snippet.json
-├─ android/
-│  ├─ play_store_512.png
-│  ├─ res/mipmap-*/ic_launcher.png
-│  ├─ res/mipmap-anydpi-v26/ic_launcher_foreground.png
-│  ├─ res/mipmap-anydpi-v26/ic_launcher_monochrome.png
-│  └─ res/mipmap-anydpi-v26/ic_launcher.xml
-├─ ios/
-│  ├─ AppIcon-*.png
-│  └─ Contents.json
-├─ windows/
-│  ├─ ico-*.png
-│  └─ app.ico
-└─ desktop/
-   └─ icon-*.png
-```
+- **Client-side rendering** via Canvas, `html2canvas`, and tailored generators for sprites, noise, gradients, and SVG shapes.
+- **Data utilities** including design token parsing, regex helpers, seeded dataset generation, CSV/JSON exporters, and contrast math.
+- **Shared UI** with Tailwind CSS, responsive cards, and a persistent nav that scales as new Smith tools arrive.
+- **Bundling** with Vite for instant HMR, TypeScript types, and zero-config performance.
 
 ## 🗺️ Roadmap Ideas
 
-- Per-preset overrides (padding, background fills, selective sizes).
-- Batch naming templates & project presets.
-- Clipboard paste + URL importing.
-- Mac `.icns` generator for macOS packaging.
-- Manifest authoring wizard (name, theme, shortcuts) to accompany icon exports.
+- Tool categories & search across the dashboard
+- Workspace presets for favourite Smith combinations
+- Clipboard paste, URL importing, and drag-drop everywhere
+- Additional export pipelines (macOS `.icns`, token formats, Storybook docs)
+- Collaboration features for sharing config snapshots
 
 ## 🤝 Contributing
 
-Pull requests are welcome! If you ship a new preset or hint, add a quick blurb to the README and include screenshots in the PR description.
+Contributions are welcome! If you add a new Smith or enhance an existing tool, update the README table and changelog with a short summary.
 
 1. Fork & branch: `git checkout -b feature/amazing-idea`
 2. Install deps: `npm install`
@@ -117,4 +78,4 @@ Pull requests are welcome! If you ship a new preset or hint, add a quick blurb t
 
 ## 📄 License
 
-MIT © 2025 IconSmith contributors
+MIT © 2025 Smith Suite contributors
